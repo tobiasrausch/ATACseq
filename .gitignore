@@ -1,7 +1,11 @@
+.bowtie
 .picard
 .htslib
 .samtools
 .bcftools
+.boost
+.fastqc
+src/FastQC
 
 # Compiled Object files
 *.slo

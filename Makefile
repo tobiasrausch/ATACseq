@@ -1,4 +1,5 @@
 # External sources
+BOWTIESOURCES = $(wildcard src/bowtie/*.h)
 PICARDSOURCES = $(wildcard src/picard/src/java/picard/*/*.java)
 HTSLIBSOURCES = $(wildcard src/htslib/*.c) $(wildcard src/htslib/*.h)
 SAMSOURCES = $(wildcard src/samtools/*.c) $(wildcard src/samtools/*.h)
@@ -6,9 +7,15 @@ BCFSOURCES = $(wildcard src/bcftools/*.c) $(wildcard src/bcftools/*.h)
 BOOSTSOURCES = $(wildcard src/modular-boost/libs/iostreams/include/boost/iostreams/*.hpp)
 
 # Targets
-TARGETS = .picard .htslib .samtools .bcftools .boost
+TARGETS = .fastqc .bowtie .picard .htslib .samtools .bcftools .boost
 
 all:   	$(TARGETS)
+
+.fastqc:
+	cd src && wget 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.5.zip' && unzip fastqc_v0.11.5.zip && chmod 755 FastQC/fastqc && rm fastqc_v0.11.5.zip && cd ../ && touch .fastqc
+
+.bowtie: $(BOWTIESOURCES)
+	cd src/bowtie && make && cd ../../ && touch .bowtie
 
 .picard: $(PICARDSOURCES)
 	cd src/picard && ./gradlew shadowJar && cd ../../ && touch .picard
@@ -27,8 +34,9 @@ all:   	$(TARGETS)
 
 clean:
 	cd src/picard && ./gradlew clean
+	cd src/bowtie && make clean
 	cd src/htslib && make clean
 	cd src/samtools && make clean
 	cd src/bcftools && make clean
 	cd src/modular-boost && ./b2 --clean-all
-	rm -f $(TARGETS) $(TARGETS:=.o)
+	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC
