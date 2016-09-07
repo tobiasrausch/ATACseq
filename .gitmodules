@@ -29,3 +29,4 @@
 [submodule "src/cutadapt"]
 	path = src/cutadapt
 	url = https://github.com/marcelm/cutadapt.git
+	ignore = dirty

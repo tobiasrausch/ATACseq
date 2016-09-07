@@ -22,7 +22,7 @@ SAM=${BASEDIR}/samtools/samtools
 BCF=${BASEDIR}/bcftools/bcftools
 FASTQC=${BASEDIR}/FastQC/fastqc
 BOWTIE=${BASEDIR}/bowtie/bowtie2
-SKEWER=${BASEDIR}/skewer/skewer
+CUTADAPT=${BASEDIR}/cutadapt/exe/cutadapt
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
@@ -39,19 +39,17 @@ BAMID=`echo ${OUTP} | sed 's/$/.align/'`
 # Fastqc
 mkdir -p ${OUTP}/prefastqc/ && ${FASTQC} -o ${OUTP}/prefastqc/ ${FQ1} && ${FASTQC} -o ${OUTP}/prefastqc/ ${FQ2}
 
-# Adapter trimming,
-echo -e ">read1\nCTGTCTCTTATACACATCTCCGAGCCCACGAGACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG\n>read2\nCTGTCTCTTATACACATCTGACGCTGCCGACGANNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT" > ${OUTP}/adapters.fa
-${SKEWER} -l 35 -q 20 -t ${THREADS} -z -o ${OUTP}/${OUTP} -x ${OUTP}/adapters.fa -m pe ${FQ1} ${FQ1}
-rm ${OUTP}/adapters.fa
+# Adapter trimming
+${CUTADAPT} --quiet -q 20 -m 35 -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -o ${OUTP}/${OUTP}.1.fq -p ${OUTP}/${OUTP}.2.fq ${FQ1} ${FQ1} && gzip ${OUTP}/${OUTP}.1.fq ${OUTP}/${OUTP}.2.fq
 
 # Fastqc
-mkdir -p ${OUTP}/postfastqc/ && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}-trimmed-pair1.fastq.gz && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}-trimmed-pair2.fastq.gz
+mkdir -p ${OUTP}/postfastqc/ && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.1.fq.gz && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.2.fq.gz
 
 # Bowtie
-${BOWTIE} --threads ${THREADS} --very-sensitive --maxins 2000  --no-discordant --no-mixed -x ${HG} -1 ${OUTP}/${OUTP}-trimmed-pair1.fastq.gz -2 ${OUTP}/${OUTP}-trimmed-pair2.fastq.gz | samtools view -bT ${HG} - > ${OUTP}/${BAMID}.bam
+${BOWTIE} --threads ${THREADS} --very-sensitive --maxins 2000  --no-discordant --no-mixed -x ${HG} -1 ${OUTP}/${OUTP}.1.fq$.gz -2 ${OUTP}/${OUTP}.2.fq.gz | samtools view -bT ${HG} - > ${OUTP}/${BAMID}.bam
 
 # Removed trimmed fastq
-rm ${OUTP}/${OUTP}-trimmed-pair1.fastq.gz ${OUTP}/${OUTP}-trimmed-pair2.fastq.gz
+rm ${OUTP}/${OUTP}.1.fq$.gz ${OUTP}/${OUTP}.2.fq.gz
 
 # Sort & Index
 ${SAM} sort -o ${OUTP}/${BAMID}.srt.bam ${OUTP}/${BAMID}.bam && rm ${OUTP}/${BAMID}.bam && ${SAM} index ${OUTP}/${BAMID}.srt.bam
