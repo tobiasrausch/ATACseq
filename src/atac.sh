@@ -39,8 +39,10 @@ BAMID=`echo ${OUTP} | sed 's/$/.align/'`
 # Fastqc
 mkdir -p ${OUTP}/prefastqc/ && ${FASTQC} -o ${OUTP}/prefastqc/ ${FQ1} && ${FASTQC} -o ${OUTP}/prefastqc/ ${FQ2}
 
-# Adapter trimming
-${SKEWER} -z -o ${OUTP}/${OUTP} -x CTGTCTCTTATACACATCTCCGAGCCCACGAGACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG -y CTGTCTCTTATACACATCTGACGCTGCCGACGANNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT -m pe ${FQ1} ${FQ1}
+# Adapter trimming,
+echo -e ">read1\nCTGTCTCTTATACACATCTCCGAGCCCACGAGACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG\n>read2\nCTGTCTCTTATACACATCTGACGCTGCCGACGANNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT" > ${OUTP}/adapters.fa
+${SKEWER} -l 35 -q 20 -t ${THREADS} -z -o ${OUTP}/${OUTP} -x ${OUTP}/adapters.fa -m pe ${FQ1} ${FQ1}
+rm ${OUTP}/adapters.fa
 
 # Fastqc
 mkdir -p ${OUTP}/postfastqc/ && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}-trimmed-pair1.fastq.gz && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}-trimmed-pair2.fastq.gz
