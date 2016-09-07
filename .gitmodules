@@ -18,3 +18,11 @@
 	path = src/modular-boost
 	url = https://github.com/boostorg/boost.git
 	ignore = dirty
+[submodule "src/bowtie"]
+	path = src/bowtie
+	url = https://github.com/BenLangmead/bowtie2.git
+	ignore = dirty
+[submodule "src/skewer"]
+	path = src/skewer
+	url = https://github.com/relipmoc/skewer.git
+	ignore = dirty

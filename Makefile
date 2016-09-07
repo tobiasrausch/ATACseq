@@ -1,5 +1,6 @@
 # External sources
-BOWTIESOURCES = $(wildcard src/bowtie/*.h)
+BOWTIESOURCES = $(wildcard src/bowtie/src/*.h)
+SKEWERSOURCES = $(wildcard src/skewer/*.h)
 PICARDSOURCES = $(wildcard src/picard/src/java/picard/*/*.java)
 HTSLIBSOURCES = $(wildcard src/htslib/*.c) $(wildcard src/htslib/*.h)
 SAMSOURCES = $(wildcard src/samtools/*.c) $(wildcard src/samtools/*.h)
@@ -7,7 +8,7 @@ BCFSOURCES = $(wildcard src/bcftools/*.c) $(wildcard src/bcftools/*.h)
 BOOSTSOURCES = $(wildcard src/modular-boost/libs/iostreams/include/boost/iostreams/*.hpp)
 
 # Targets
-TARGETS = .fastqc .bowtie .picard .htslib .samtools .bcftools .boost
+TARGETS = .fastqc .skewer .bowtie .picard .htslib .samtools .bcftools .boost
 
 all:   	$(TARGETS)
 
@@ -16,6 +17,9 @@ all:   	$(TARGETS)
 
 .bowtie: $(BOWTIESOURCES)
 	cd src/bowtie && make && cd ../../ && touch .bowtie
+
+.skewer: $(SKEWERSOURCES)
+	cd src/skewer && make && cd ../../ && touch .skewer
 
 .picard: $(PICARDSOURCES)
 	cd src/picard && ./gradlew shadowJar && cd ../../ && touch .picard
@@ -35,6 +39,7 @@ all:   	$(TARGETS)
 clean:
 	cd src/picard && ./gradlew clean
 	cd src/bowtie && make clean
+	cd src/skewer && make clean
 	cd src/htslib && make clean
 	cd src/samtools && make clean
 	cd src/bcftools && make clean

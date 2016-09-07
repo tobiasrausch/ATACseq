@@ -5,6 +5,7 @@
 .bcftools
 .boost
 .fastqc
+.skewer
 src/FastQC
 
 # Compiled Object files
