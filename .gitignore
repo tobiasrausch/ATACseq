@@ -3,9 +3,10 @@
 .htslib
 .samtools
 .bcftools
-.boost
+.bamStats
 .fastqc
 .cutadapt
+src/cutadapt
 src/FastQC
 
 # Compiled Object files

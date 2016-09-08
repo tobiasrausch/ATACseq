@@ -14,11 +14,11 @@
 	path = src/bcftools
 	url = https://github.com/samtools/bcftools.git
 	ignore = dirty
-[submodule "src/modular-boost"]
-	path = src/modular-boost
-	url = https://github.com/boostorg/boost.git
-	ignore = dirty
 [submodule "src/bowtie"]
 	path = src/bowtie
 	url = https://github.com/BenLangmead/bowtie2.git
+	ignore = dirty
+[submodule "src/bamStats"]
+	path = src/bamStats
+	url = https://github.com/tobiasrausch/bamStats.git
 	ignore = dirty
