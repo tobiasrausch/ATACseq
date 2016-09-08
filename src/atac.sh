@@ -25,9 +25,10 @@ SAM=${BASEDIR}/samtools/samtools
 BCF=${BASEDIR}/bcftools/bcftools
 FASTQC=${BASEDIR}/FastQC/fastqc
 BOWTIE=${BASEDIR}/bowtie/bowtie2
-CUTADAPT=${BASEDIR}/cutadapt/exe/cutadapt
+CUTADAPT=${BASEDIR}/cutadapt/cutadapt
 BAMSTATS=${BASEDIR}/bamStats/src/bamStats
 BAMSTATR=${BASEDIR}/bamStats/R
+ACT=${BASEDIR}/venv/bin/activate
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
@@ -79,6 +80,11 @@ rm ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${OUTP}/${BAMID}.srt.clean.rmdup.bam.bai
 ${BAMSTATS} -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
 Rscript ${BAMSTATR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
 Rscript ${BAMSTATR}/mapq.R ${OUTP}/${OUTP}.bamStats.mapq.tsv
+
+# peak calling
+source ${ACT}
+macs2 callpeak --gsize hs --nomodel --shift -100 --extsize 200 --broad --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
+macs2 pileup --ifile ${OUTP}/${BAMID}.final.bam --ofile ${OUTP}/${BAMID}.bedGraph --format BAM --extsize 100
 
 # Clean-up tmp
 rm -rf ${TMP}

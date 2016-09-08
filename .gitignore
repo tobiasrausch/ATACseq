@@ -5,9 +5,11 @@
 .bcftools
 .bamStats
 .fastqc
+.macs2
 .cutadapt
 src/cutadapt
 src/FastQC
+src/venv
 
 # Compiled Object files
 *.slo

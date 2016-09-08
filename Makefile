@@ -9,7 +9,7 @@ BOOSTSOURCES = $(wildcard src/modular-boost/libs/iostreams/include/boost/iostrea
 PBASE=$(shell pwd)
 
 # Targets
-TARGETS = .fastqc .cutadapt .bowtie .picard .htslib .samtools .bcftools .bamStats
+TARGETS = .fastqc .cutadapt .macs2 .bowtie .picard .htslib .samtools .bcftools .bamStats
 
 all:   	$(TARGETS)
 
@@ -23,7 +23,10 @@ all:   	$(TARGETS)
 	cd src/bowtie && make && cd ../../ && touch .bowtie
 
 .cutadapt:
-	mkdir src/cutadapt/ && virtualenv ${PBASE}/src/cutadapt/venv && ${PBASE}/src/cutadapt/venv/bin/pip install --install-option="--install-scripts=${PBASE}/src/cutadapt/exe" cutadapt==1.10 && touch .cutadapt
+	mkdir src/cutadapt/ && virtualenv ${PBASE}/src/venv && ${PBASE}/src/venv/bin/pip install --install-option="--install-scripts=${PBASE}/src/cutadapt" cutadapt==1.10 && touch .cutadapt
+
+.macs2: .cutadapt
+	. ${PBASE}/src/venv/bin/activate && pip install numpy && pip install Cython && pip install MACS2 && touch .macs2
 
 .picard: $(PICARDSOURCES)
 	cd src/picard && ./gradlew shadowJar && cd ../../ && touch .picard
@@ -44,4 +47,4 @@ clean:
 	cd src/samtools && make clean
 	cd src/bcftools && make clean
 	cd src/modular-boost && ./b2 --clean-all
-	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/cutadapt/
+	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/cutadapt/ src/venv/
