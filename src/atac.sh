@@ -75,9 +75,10 @@ ${SAM} view -F 1024 -q ${QUAL} -b ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${CHRS} >
 ${SAM} index ${OUTP}/${BAMID}.final.bam
 rm ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${OUTP}/${BAMID}.srt.clean.rmdup.bam.bai
 
-# Run stats using filtered BAM
+# Run stats using filtered BAM, TSS enrichment, error rates, etc.
 ${BAMSTATS} -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
 Rscript ${BAMSTATR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
+Rscript ${BAMSTATR}/mapq.R ${OUTP}/${OUTP}.bamStats.mapq.tsv
 
 # Clean-up tmp
 rm -rf ${TMP}
