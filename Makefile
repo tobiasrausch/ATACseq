@@ -46,5 +46,5 @@ clean:
 	cd src/htslib && make clean
 	cd src/samtools && make clean
 	cd src/bcftools && make clean
-	cd src/modular-boost && ./b2 --clean-all
+	cd src/bamStats && make clean
 	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/cutadapt/ src/venv/
