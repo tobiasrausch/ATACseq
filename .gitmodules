@@ -22,7 +22,3 @@
 	path = src/bowtie
 	url = https://github.com/BenLangmead/bowtie2.git
 	ignore = dirty
-[submodule "src/cutadapt"]
-	path = src/cutadapt
-	url = https://github.com/marcelm/cutadapt.git
-	ignore = dirty
