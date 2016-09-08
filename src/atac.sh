@@ -43,13 +43,13 @@ FQ2ID=`echo ${OUTP} | sed 's/$/.fq2/'`
 BAMID=`echo ${OUTP} | sed 's/$/.align/'`
 
 # Fastqc
-mkdir -p ${OUTP}/prefastqc/ && ${FASTQC} -o ${OUTP}/prefastqc/ ${FQ1} && ${FASTQC} -o ${OUTP}/prefastqc/ ${FQ2}
+mkdir -p ${OUTP}/prefastqc/ && ${FASTQC} -t ${THREADS} -o ${OUTP}/prefastqc/ ${FQ1} && ${FASTQC} -t ${THREADS} -o ${OUTP}/prefastqc/ ${FQ2}
 
 # Adapter trimming
 ${CUTADAPT} --quiet -q 20 -m 35 -a CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -A CTGTCTCTTATACACATCTCCGAGCCCACGAGAC -o ${OUTP}/${OUTP}.1.fq -p ${OUTP}/${OUTP}.2.fq ${FQ1} ${FQ2} && gzip ${OUTP}/${OUTP}.1.fq && gzip ${OUTP}/${OUTP}.2.fq
 
 # Fastqc
-mkdir -p ${OUTP}/postfastqc/ && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.1.fq.gz && ${FASTQC} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.2.fq.gz
+mkdir -p ${OUTP}/postfastqc/ && ${FASTQC} -t ${THREADS} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.1.fq.gz && ${FASTQC} -t ${THREADS} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.2.fq.gz
 
 # Bowtie
 ${BOWTIE} --threads ${THREADS} --very-sensitive --maxins 2000  --no-discordant --no-mixed -x ${HG} -1 ${OUTP}/${OUTP}.1.fq.gz -2 ${OUTP}/${OUTP}.2.fq.gz | samtools view -bT ${HG} - > ${OUTP}/${BAMID}.bam
