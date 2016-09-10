@@ -6,6 +6,8 @@ then
     exit -1
 fi
 
+export LD_LIBRARY_PATH=/programs/x86_64-linux/python/2.7.2/lib/:${LD_LIBRARY_PATH}
+
 SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
