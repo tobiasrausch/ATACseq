@@ -13,7 +13,7 @@ BASEDIR=$(dirname "$SCRIPT")
 
 # Custom parameters
 THREADS=4
-QUAL=30      # Mapping quality threshold
+QUAL=10      # Mapping quality threshold
 
 # CMD parameters
 FQ1=${1}

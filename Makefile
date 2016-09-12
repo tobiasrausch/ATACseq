@@ -1,6 +1,9 @@
-VIRTUALENV=/g/software/bin/virtualenv
-PYTHON=/g/software/bin/python-2.7
-JAVA=/g/software/bin/java-8
+#VIRTUALENV=/g/software/bin/virtualenv
+#PYTHON=/g/software/bin/python-2.7
+#JAVA=/g/software/bin/java-8
+VIRTUALENV=virtualenv
+PYTHON=python
+JAVA=java
 
 # External sources
 BOWTIESOURCES = $(wildcard src/bowtie/src/*.h)
@@ -48,11 +51,10 @@ all:   	$(TARGETS)
 	cd src/bcftools && make && cd ../../ && touch .bcftools
 
 clean:
-	rm src/java/java && rmdir src/java
 	cd src/picard && ./gradlew clean
 	cd src/bowtie && make clean
 	cd src/htslib && make clean
 	cd src/samtools && make clean
 	cd src/bcftools && make clean
 	cd src/bamStats && make clean
-	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/cutadapt/ src/venv/
+	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/cutadapt/ src/venv/ src/java/
