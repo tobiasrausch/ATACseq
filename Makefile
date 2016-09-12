@@ -1,3 +1,7 @@
+VIRTUALENV=/g/software/bin/virtualenv
+PYTHON=/g/software/bin/python-2.7
+JAVA=/g/software/bin/java-8
+
 # External sources
 BOWTIESOURCES = $(wildcard src/bowtie/src/*.h)
 PICARDSOURCES = $(wildcard src/picard/src/java/picard/*/*.java)
@@ -9,9 +13,12 @@ BOOSTSOURCES = $(wildcard src/modular-boost/libs/iostreams/include/boost/iostrea
 PBASE=$(shell pwd)
 
 # Targets
-TARGETS = .fastqc .cutadapt .macs2 .bowtie .picard .htslib .samtools .bcftools .bamStats
+TARGETS = .fastqc .cutadapt .macs2 .bowtie .picard .htslib .samtools .bcftools .bamStats .java
 
 all:   	$(TARGETS)
+
+.java:
+	mkdir src/java/ && cd src/java/ && ln -s ${JAVA} java && cd ../../ && touch .java
 
 .fastqc:
 	cd src && wget 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.5.zip' && unzip fastqc_v0.11.5.zip && chmod 755 FastQC/fastqc && rm fastqc_v0.11.5.zip && cd ../ && touch .fastqc
@@ -23,7 +30,7 @@ all:   	$(TARGETS)
 	cd src/bowtie && make && cd ../../ && touch .bowtie
 
 .cutadapt:
-	mkdir src/cutadapt/ && virtualenv ${PBASE}/src/venv && ${PBASE}/src/venv/bin/pip install --install-option="--install-scripts=${PBASE}/src/cutadapt" cutadapt==1.10 && touch .cutadapt
+	mkdir src/cutadapt/ && ${VIRTUALENV} -p ${PYTHON} ${PBASE}/src/venv && ${PBASE}/src/venv/bin/pip install --install-option="--install-scripts=${PBASE}/src/cutadapt" cutadapt==1.10 && touch .cutadapt
 
 .macs2: .cutadapt
 	. ${PBASE}/src/venv/bin/activate && pip install numpy && pip install Cython && pip install MACS2 && touch .macs2
@@ -41,6 +48,7 @@ all:   	$(TARGETS)
 	cd src/bcftools && make && cd ../../ && touch .bcftools
 
 clean:
+	rm src/java/java && rmdir src/java
 	cd src/picard && ./gradlew clean
 	cd src/bowtie && make clean
 	cd src/htslib && make clean

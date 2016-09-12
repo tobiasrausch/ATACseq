@@ -6,7 +6,7 @@ then
     exit -1
 fi
 
-export LD_LIBRARY_PATH=/programs/x86_64-linux/python/2.7.2/lib/:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/g/software/linux/pack/python-2.7/lib/:/usr/lib64/
 
 SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
@@ -31,6 +31,7 @@ CUTADAPT=${BASEDIR}/cutadapt/cutadapt
 BAMSTATS=${BASEDIR}/bamStats/src/bamStats
 BAMSTATR=${BASEDIR}/bamStats/R
 ACT=${BASEDIR}/venv/bin/activate
+JAVA=${BASEDIR}/java/java
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
@@ -63,10 +64,10 @@ rm ${OUTP}/${OUTP}.1.fq.gz ${OUTP}/${OUTP}.2.fq.gz
 ${SAM} sort -o ${OUTP}/${BAMID}.srt.bam ${OUTP}/${BAMID}.bam && rm ${OUTP}/${BAMID}.bam && ${SAM} index ${OUTP}/${BAMID}.srt.bam
 
 # Clean .bam file
-java ${JAVAOPT} -jar ${PICARD} CleanSam I=${OUTP}/${BAMID}.srt.bam O=${OUTP}/${BAMID}.srt.clean.bam ${PICARDOPT} && rm ${OUTP}/${BAMID}.srt.bam*
+${JAVA} ${JAVAOPT} -jar ${PICARD} CleanSam I=${OUTP}/${BAMID}.srt.bam O=${OUTP}/${BAMID}.srt.clean.bam ${PICARDOPT} && rm ${OUTP}/${BAMID}.srt.bam*
 
 # Mark duplicates
-java ${JAVAOPT} -jar ${PICARD} MarkDuplicates I=${OUTP}/${BAMID}.srt.clean.bam O=${OUTP}/${BAMID}.srt.clean.rmdup.bam M=${OUTP}/${OUTP}.markdups.log PG=null MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 ${PICARDOPT} && rm ${OUTP}/${BAMID}.srt.clean.bam* && ${SAM} index ${OUTP}/${BAMID}.srt.clean.rmdup.bam
+${JAVA} ${JAVAOPT} -jar ${PICARD} MarkDuplicates I=${OUTP}/${BAMID}.srt.clean.bam O=${OUTP}/${BAMID}.srt.clean.rmdup.bam M=${OUTP}/${OUTP}.markdups.log PG=null MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 ${PICARDOPT} && rm ${OUTP}/${BAMID}.srt.clean.bam* && ${SAM} index ${OUTP}/${BAMID}.srt.clean.rmdup.bam
 
 # Run stats using unfiltered BAM
 ${SAM} idxstats ${OUTP}/${BAMID}.srt.clean.rmdup.bam > ${OUTP}/${OUTP}.idxstats

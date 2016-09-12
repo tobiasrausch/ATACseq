@@ -7,9 +7,11 @@
 .fastqc
 .macs2
 .cutadapt
+.java
 src/cutadapt
 src/FastQC
 src/venv
+src/java
 
 # Compiled Object files
 *.slo
