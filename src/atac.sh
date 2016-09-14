@@ -102,5 +102,9 @@ cat ${OUTP}/${BAMID}.peaks | grep -v -w -Ff ${OUTP}/${OUTP}.remove > ${OUTP}/${B
 # annotate peaks using homer
 annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -annStats ${OUTP}/${BAMID}.homer.annStats > ${OUTP}/${BAMID}.annotated.peaks
 
+# TF motif prediction
+mkdir -p ${OUTP}/motifs
+findMotifsGenome.pl ${OUTP}/${BAMID}.peaks hg19 ${OUTP}/motifs/ -size 50 -mask
+
 # Clean-up tmp
 rm -rf ${TMP}

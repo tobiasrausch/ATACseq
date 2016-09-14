@@ -9,10 +9,12 @@
 .cutadapt
 .java
 .bedtools
+.homer
 src/cutadapt
 src/FastQC
 src/venv
 src/java
+src/homer
 
 # Compiled Object files
 *.slo
