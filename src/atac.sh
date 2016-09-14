@@ -6,10 +6,11 @@ then
     exit -1
 fi
 
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/g/software/linux/pack/python-2.7/lib/:/usr/lib64/
-
 SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
+
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/g/software/linux/pack/python-2.7/lib/:/usr/lib64/
+export PATH=${PATH}:${BASEDIR}/homer/bin/
 
 # Custom parameters
 THREADS=4
@@ -27,6 +28,7 @@ SAM=${BASEDIR}/samtools/samtools
 BCF=${BASEDIR}/bcftools/bcftools
 FASTQC=${BASEDIR}/FastQC/fastqc
 BOWTIE=${BASEDIR}/bowtie/bowtie2
+BEDTOOLS=${BASEDIR}/bedtools/bin/bedtools
 CUTADAPT=${BASEDIR}/cutadapt/cutadapt
 BAMSTATS=${BASEDIR}/bamStats/src/bamStats
 BAMSTATR=${BASEDIR}/bamStats/R
@@ -84,11 +86,21 @@ ${BAMSTATS} -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${
 Rscript ${BAMSTATR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
 Rscript ${BAMSTATR}/mapq.R ${OUTP}/${OUTP}.bamStats.mapq.tsv
 
-# peak calling
+# call peaks
 source ${ACT}
 #macs2 callpeak --gsize hs --nomodel --shift -100 --extsize 200 --broad --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
 macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
-macs2 pileup --ifile ${OUTP}/${BAMID}.final.bam --ofile ${OUTP}/${BAMID}.bedGraph --format BAM --extsize 100
+#macs2 pileup --ifile ${OUTP}/${BAMID}.final.bam --ofile ${OUTP}/${BAMID}.bedGraph --format BAM --extsize 100
+
+# extend peaks
+${BEDTOOLS} slop -b 100 -i ${OUTP}/${BAMID}_peaks.broadPeak -g ${HG}.fai > ${OUTP}/${BAMID}.peaks
+
+# filter peaks
+${BEDTOOLS} intersect -a ${OUTP}/${BAMID}.peaks -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | cut -f 4 | sort | uniq > ${OUTP}/${OUTP}.remove
+cat ${OUTP}/${BAMID}.peaks | grep -v -w -Ff ${OUTP}/${OUTP}.remove > ${OUTP}/${BAMID}.peaks.tmp && mv ${OUTP}/${BAMID}.peaks.tmp ${OUTP}/${BAMID}.peaks
+
+# annotate peaks using homer
+annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -annStats ${OUTP}/${BAMID}.homer.annStats > ${OUTP}/${BAMID}.annotated.peaks
 
 # Clean-up tmp
 rm -rf ${TMP}

@@ -7,6 +7,7 @@ JAVA=java
 
 # External sources
 BOWTIESOURCES = $(wildcard src/bowtie/src/*.h)
+BEDSOURCES = $(wildcard src/bedtools/src/*/*.cpp)
 PICARDSOURCES = $(wildcard src/picard/src/java/picard/*/*.java)
 BSTATSSOURCES = $(wildcard src/bamStats/src/*.h)
 HTSLIBSOURCES = $(wildcard src/htslib/*.c) $(wildcard src/htslib/*.h)
@@ -16,7 +17,7 @@ BOOSTSOURCES = $(wildcard src/modular-boost/libs/iostreams/include/boost/iostrea
 PBASE=$(shell pwd)
 
 # Targets
-TARGETS = .fastqc .cutadapt .macs2 .bedtools .bowtie .picard .htslib .samtools .bcftools .bamStats .java
+TARGETS = .fastqc .cutadapt .macs2 .bedtools .homer .bowtie .picard .htslib .samtools .bcftools .bamStats .java
 
 all:   	$(TARGETS)
 
@@ -31,6 +32,9 @@ all:   	$(TARGETS)
 
 .bedtools: $(BEDSOURCES)
 	cd src/bedtools && make all && cd ../../ && touch .bedtools
+
+.homer:
+	cd src/homer/ && perl configureHomer.pl -install homer && perl configureHomer.pl -install hg19 && cd ../../ && touch .homer
 
 .bowtie: $(BOWTIESOURCES)
 	cd src/bowtie && make && cd ../../ && touch .bowtie
@@ -61,4 +65,5 @@ clean:
 	cd src/samtools && make clean
 	cd src/bcftools && make clean
 	cd src/bamStats && make clean
+	mv src/homer/configureHomer.pl . && rm -rf src/homer/ && mkdir -p src/homer/ && mv configureHomer.pl src/homer/
 	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/cutadapt/ src/venv/ src/java/
