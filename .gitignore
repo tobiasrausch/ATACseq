@@ -8,6 +8,7 @@
 .macs2
 .cutadapt
 .java
+.bedtools
 src/cutadapt
 src/FastQC
 src/venv

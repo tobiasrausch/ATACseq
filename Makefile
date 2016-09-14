@@ -16,7 +16,7 @@ BOOSTSOURCES = $(wildcard src/modular-boost/libs/iostreams/include/boost/iostrea
 PBASE=$(shell pwd)
 
 # Targets
-TARGETS = .fastqc .cutadapt .macs2 .bowtie .picard .htslib .samtools .bcftools .bamStats .java
+TARGETS = .fastqc .cutadapt .macs2 .bedtools .bowtie .picard .htslib .samtools .bcftools .bamStats .java
 
 all:   	$(TARGETS)
 
@@ -28,6 +28,9 @@ all:   	$(TARGETS)
 
 .bamStats: $(BSTATSSOURCES)
 	cd src/bamStats && make all && cd ../../ && touch .bamStats
+
+.bedtools: $(BEDSOURCES)
+	cd src/bedtools && make all && cd ../../ && touch .bedtools
 
 .bowtie: $(BOWTIESOURCES)
 	cd src/bowtie && make && cd ../../ && touch .bowtie
@@ -53,6 +56,7 @@ all:   	$(TARGETS)
 clean:
 	cd src/picard && ./gradlew clean
 	cd src/bowtie && make clean
+	cd src/bedtools && make clean
 	cd src/htslib && make clean
 	cd src/samtools && make clean
 	cd src/bcftools && make clean

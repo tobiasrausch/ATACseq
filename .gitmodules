@@ -22,3 +22,7 @@
 	path = src/bamStats
 	url = https://github.com/tobiasrausch/bamStats.git
 	ignore = dirty
+[submodule "src/bedtools"]
+	path = src/bedtools
+	url = https://github.com/arq5x/bedtools2.git
+	ignore = dirty

@@ -86,7 +86,8 @@ Rscript ${BAMSTATR}/mapq.R ${OUTP}/${OUTP}.bamStats.mapq.tsv
 
 # peak calling
 source ${ACT}
-macs2 callpeak --gsize hs --nomodel --shift -100 --extsize 200 --broad --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
+#macs2 callpeak --gsize hs --nomodel --shift -100 --extsize 200 --broad --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
+macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
 macs2 pileup --ifile ${OUTP}/${BAMID}.final.bam --ofile ${OUTP}/${BAMID}.bedGraph --format BAM --extsize 100
 
 # Clean-up tmp
