@@ -93,18 +93,19 @@ macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --n
 #macs2 pileup --ifile ${OUTP}/${BAMID}.final.bam --ofile ${OUTP}/${BAMID}.bedGraph --format BAM --extsize 100
 
 # extend peaks
-${BEDTOOLS} slop -b 100 -i ${OUTP}/${BAMID}_peaks.broadPeak -g ${HG}.fai > ${OUTP}/${BAMID}.peaks
+cd ${OUTP}
+${BEDTOOLS} slop -b 100 -i ${BAMID}_summits.bed -g ${HG}.fai > ${BAMID}.peaks
 
 # filter peaks
-${BEDTOOLS} intersect -a ${OUTP}/${BAMID}.peaks -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | cut -f 4 | sort | uniq > ${OUTP}/${OUTP}.remove
-cat ${OUTP}/${BAMID}.peaks | grep -v -w -Ff ${OUTP}/${OUTP}.remove > ${OUTP}/${BAMID}.peaks.tmp && mv ${OUTP}/${BAMID}.peaks.tmp ${OUTP}/${BAMID}.peaks
+${BEDTOOLS} intersect -a ${BAMID}.peaks -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | cut -f 4 | sort | uniq > ${OUTP}.remove
+cat ${BAMID}.peaks | grep -v -w -Ff ${OUTP}.remove > ${BAMID}.peaks.tmp && mv ${BAMID}.peaks.tmp ${BAMID}.peaks
 
 # annotate peaks using homer
-annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -annStats ${OUTP}/${BAMID}.homer.annStats > ${OUTP}/${BAMID}.annotated.peaks
+annotatePeaks.pl ${BAMID}.peaks hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
 
 # TF motif prediction
-mkdir -p ${OUTP}/motifs
-findMotifsGenome.pl ${OUTP}/${BAMID}.peaks hg19 ${OUTP}/motifs/ -size 50 -mask
+mkdir -p motifs
+findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
 
 # Clean-up tmp
 rm -rf ${TMP}
