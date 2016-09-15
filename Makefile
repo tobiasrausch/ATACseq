@@ -34,7 +34,7 @@ all:   	$(TARGETS)
 	cd src/bedtools && make all && cd ../../ && touch .bedtools
 
 .gs:
-	cd src/ && wget 'https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs919/ghostscript-9.19.tar.gz' && tar -xzf ghostscript-9.19.tar.gz && rm ghostscript-9.19.tar.gz && cd ghostscript-9.19/ && ./configure --prefix=${PBASE}/src/gs/ && make && make install && cd ../ && rm -rf ghostscript-9.19/ && cd ../ && touch .gs
+	cd src/ && wget wget -O ghostscript-9.19.tar.gz 'https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs919/ghostscript-9.19.tar.gz' && tar -xzf ghostscript-9.19.tar.gz && rm ghostscript-9.19.tar.gz && cd ghostscript-9.19/ && ./configure --prefix=${PBASE}/src/gs/ && make && make install && cd ../ && rm -rf ghostscript-9.19/ && cd ../ && touch .gs
 
 .weblogo: .gs
 	cd src/ && wget 'http://weblogo.berkeley.edu/release/weblogo.2.8.2.tar.gz' && tar -xzf weblogo.2.8.2.tar.gz && rm -rf weblogo.2.8.2.tar.gz && cd ../ && touch .weblogo
@@ -42,7 +42,7 @@ all:   	$(TARGETS)
 .blat: .blat
 	mkdir src/blat/ && cd src/blat/ && wget 'http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/blat/blat' && chmod 755 blat && cd ../../ && touch .blat
 
-.homer: .gs .weblogo
+.homer: .gs .weblogo .blat
 	export PATH=${PBASE}/src/gs/bin:${PBASE}/src/weblogo:${PBASE}/src/blat:${PATH} && cd src/homer/ && perl configureHomer.pl -install homer && perl configureHomer.pl -install hg19 && cd ../../ && touch .homer
 
 .bowtie: $(BOWTIESOURCES)
