@@ -10,7 +10,7 @@ SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/g/software/linux/pack/python-2.7/lib/:/usr/lib64/
-export PATH=${PATH}:${BASEDIR}/homer/bin/
+export PATH=${BASEDIR}/homer/bin:${BASEDIR}/gs/bin:${BASEDIR}/blat:${BASEDIR}/weblogo:${PATH}
 
 # Custom parameters
 THREADS=4
