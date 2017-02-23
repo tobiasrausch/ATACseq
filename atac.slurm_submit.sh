@@ -10,6 +10,7 @@
 #SBATCH --mail-type=FAIL            # notifications for job done & fail
 #SBATCH --mail-user=rausch@embl.de  # send-to address
 
+# Do we have EasyBuild and module
 module -v > /dev/null 2>&1 || { echo >&2 "EasyBuild modules are required. Aborting."; exit 1; }
 
 # Load required modules
@@ -27,8 +28,9 @@ module load Python/2.7.12-foss-2016b
 pip install --user cutadapt
 export PATH=~/.local/bin:${PATH}
 
-SCRIPT=$(readlink -f "$0")
-BASEDIR=$(dirname "$SCRIPT")
+# Fetch ATAC-Seq script
+ATACSCRIPT=${1}
+shift
 
 # Run analysis pipeline
-${BASEDIR}/atac.sh $@
+${ATACSCRIPT} $@
