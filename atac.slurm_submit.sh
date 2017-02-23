@@ -22,6 +22,7 @@ module load MACS2
 module load Ghostscript
 module load R
 module load alfred
+module load Perl
 module load Python/2.7.12-foss-2016b
 pip install --user cutadapt
 export PATH=~/.local/bin:${PATH}

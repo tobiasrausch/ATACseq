@@ -42,7 +42,7 @@ unless ($homeDir =~ /^\//) {
 print STDERR "\n\tCurrent base directory for HOMER is $homeDir\n\n";
 
 
-my $baseURL = "http://homer.salk.edu/homer/";
+my $baseURL = "http://homer.ucsd.edu/homer/";
 my $makeProgram = 'make';  # gmake for SunOS
 my $tarProgram = 'tar';  # gtar for SunOS
 my %realCats = ();
@@ -691,8 +691,10 @@ sub checkForPrograms {
 	my $warning = 0;
 	my %bad = ();
 	print STDERR "\n\tChecking for standard utilities and 3rd party software:\n\n";
+	print STDERR "\t\t(Note: seqlogo, gs, and blat no longer required)\n";
 	my @programs = ("wget","cut","gcc","g++","zip","unzip",$makeProgram,$tarProgram,
-										"gunzip","gzip","gs","seqlogo","blat");
+										"gunzip","gzip");
+								#"gs","seqlogo","blat");
 	foreach(@programs) {
 		my $p = $_;
 		print STDERR "\tChecking for $p... ";
@@ -745,7 +747,7 @@ sub checkForPrograms {
 
 		print STDERR "\n\tAlso, if you think these programs have already been installed, make sure you modify your\n";
 		print STDERR "\tconfiguration files to include each progam in the executable path (i.e. ~/.bash_profile)\n";
-		print STDERR "\tRefer to the Homer documentation if you need more help: http://homer.salk.edu/homer/\n\n";
+		print STDERR "\tRefer to the Homer documentation if you need more help: http://homer.ucsd.edu/homer/\n\n";
 		if ($bad == 1) {
 			print STDERR "\t--- Cannot Continue until required software is available ---\n";
 			exit;
@@ -798,6 +800,8 @@ sub compileSoftware {
 		"findHiCDomains.pl",
 		"SIMA.pl",
 		"convertOrganismID.pl",
+		"makeMetaGeneProfile.pl",
+		"getDifferentialPeaksReplicates.pl",
 		"../update/updateUCSCGenomeAnnotations.pl",
 		"../update/updateGeneIdentifiers.pl",
 		"../update/updatePromoters.pl"
@@ -806,7 +810,7 @@ sub compileSoftware {
 
 	foreach(@files) {
 		my $file = $_;
-		open IN, "$homeDir/bin/" . $file;
+		open IN, "$homeDir/bin/" . $file or print STDERR "Trouble opening $homeDir/bin/$file\n";
 		open OUT, ">.new.pl";
 		my $count = 0;
 		while (<IN>) {
