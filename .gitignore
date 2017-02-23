@@ -1,24 +1,10 @@
-.bowtie
 .picard
-.htslib
-.samtools
-.bcftools
-.bamStats
 .fastqc
-.macs2
-.cutadapt
-.java
-.bedtools
 .homer
 .weblogo
-.gs
 .blat
-src/cutadapt
 src/FastQC
-src/venv
-src/java
 src/homer
-src/gs
 src/weblogo
 src/blat
 
