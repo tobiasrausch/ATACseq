@@ -1,12 +1,8 @@
 .picard
 .fastqc
 .homer
-.weblogo
-.blat
 src/FastQC
 src/homer
-src/weblogo
-src/blat
 
 # Compiled Object files
 *.slo
