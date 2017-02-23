@@ -2,10 +2,6 @@
 	path = src/picard
 	url = https://github.com/broadinstitute/picard.git
 	ignore = dirty
-[submodule "src/htslib"]
-	path = src/htslib
-	url = https://github.com/samtools/htslib.git
-	ignore = dirty
 [submodule "src/samtools"]
 	path = src/samtools
 	url = https://github.com/samtools/samtools.git
