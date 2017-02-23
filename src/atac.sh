@@ -22,7 +22,7 @@ HG=${3}
 OUTP=${4}
 
 # Programs
-PICARD=${BASEDIR}/picard/build/libs/picard.jar
+PICARD=${BASEDIR}/picard/picard.jar
 FASTQC=${BASEDIR}/FastQC/fastqc
 RSCR=${BASEDIR}/../R
 

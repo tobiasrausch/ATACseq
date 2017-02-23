@@ -3,6 +3,7 @@
 .homer
 src/FastQC
 src/homer
+src/picard
 
 # Compiled Object files
 *.slo
