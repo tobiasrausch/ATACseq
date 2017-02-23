@@ -6,10 +6,6 @@
 	path = src/samtools
 	url = https://github.com/samtools/samtools.git
 	ignore = dirty
-[submodule "src/bcftools"]
-	path = src/bcftools
-	url = https://github.com/samtools/bcftools.git
-	ignore = dirty
 [submodule "src/bowtie"]
 	path = src/bowtie
 	url = https://github.com/BenLangmead/bowtie2.git
