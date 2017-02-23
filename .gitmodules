@@ -2,7 +2,3 @@
 	path = src/picard
 	url = https://github.com/broadinstitute/picard.git
 	ignore = dirty
-[submodule "src/bowtie"]
-	path = src/bowtie
-	url = https://github.com/BenLangmead/bowtie2.git
-	ignore = dirty
