@@ -6,7 +6,3 @@
 	path = src/bowtie
 	url = https://github.com/BenLangmead/bowtie2.git
 	ignore = dirty
-[submodule "src/bedtools"]
-	path = src/bedtools
-	url = https://github.com/arq5x/bedtools2.git
-	ignore = dirty
