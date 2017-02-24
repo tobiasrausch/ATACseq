@@ -21,7 +21,7 @@ module load Bowtie2
 module load BEDTools
 module load MACS2
 module load Ghostscript
-module load R
+module load R-bundle-Bioconductor
 module load alfred
 module load Perl
 module load Python/2.7.12-foss-2016b

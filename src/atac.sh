@@ -2,14 +2,22 @@
 
 if [ $# -ne 4 ]
 then
-    echo "Usage: $0 <read1.fq.gz> <read2.fq.gz> <genome.fa> <outprefix>"
+    echo "**********************************************************************"
+    echo "ATAC-Seq analysis pipeline."
+    echo "This program comes with ABSOLUTELY NO WARRANTY."
+    echo ""
+    echo "Contact: Tobias Rausch (rausch@embl.de)"
+    echo "**********************************************************************"
+    echo ""
+    echo "Usage: $0 <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>"
+    echo ""
     exit -1
 fi
 
 SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
-export PATH=${BASEDIR}/homer/bin:${BASEDIR}/blat:${BASEDIR}/weblogo:${PATH}
+export PATH=${BASEDIR}/homer/bin:${PATH}
 
 # Custom parameters
 THREADS=4
@@ -97,6 +105,9 @@ cat ${BAMID}.peaks | grep -v -w -Ff ${OUTP}.remove > ${BAMID}.peaks.tmp && mv ${
 
 # annotate peaks using homer
 annotatePeaks.pl ${BAMID}.peaks hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
+
+# create tag directory (should we use normGC? only unique, keepOne?)
+makeTagDirectory tagdir -genome ${HG} -checkGC ${BAMID}.final.bam
 
 # TF motif prediction
 mkdir -p motifs
