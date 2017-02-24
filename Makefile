@@ -1,8 +1,5 @@
 SHELL := /bin/bash
 
-# External sources
-PBASE=$(shell pwd)
-
 # Targets
 TARGETS = .fastqc .homer .picard 
 
