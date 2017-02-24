@@ -89,9 +89,9 @@ getDifferentialPeaks ${OUTP}/${BAMID}.peaks <(echo ${TTD} | tr ' ' '\n' | grep "
 getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}.peaks -genome hg19 -DESeq2 -b ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.deseq2
 
 # TF motif prediction
-#cd ${OUTP}
-#mkdir -p motifs
-#findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
+cd ${OUTP}
+mkdir -p motifs
+findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
 
 # Clean-up tmp
 if [ -n "${SCRATCHDIR}" ]
