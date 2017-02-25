@@ -43,8 +43,10 @@ OPTARR=( $@ )
 TYPE="CONTROL"
 CONTROL=""
 CTD=""
+LASTC=""
 TREATMENT=""
 TTD=""
+LASTT=""
 for ((  i = 0 ;  i < ${#OPTARR[@]};  i++  ))
 do
     if [ ${OPTARR[$i]} == "-c" ]
@@ -59,9 +61,11 @@ do
 	then
 	    CONTROL=${CONTROL}" "${OPTARR[$i]}
 	    CTD=${CTD}" "${TD}
+	    LASTC=${TD}
 	else
 	    TREATMENT=${TREATMENT}" "${OPTARR[$i]}
 	    TTD=${TTD}" "${TD}
+	    LASTT=${TD}
 	fi
     fi
 done
@@ -85,7 +89,7 @@ cat ${OUTP}/${BAMID}.peaks | grep -v -w -Ff ${OUTP}/${OUTP}.remove > ${OUTP}/${B
 annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -size given -noadj -raw -noann -nogene -d ${CTD} ${TTD} > ${OUTP}/${BAMID}.quant.raw.peaks
 
 # get differential peaks
-getDifferentialPeaks ${OUTP}/${BAMID}.peaks <(echo ${TTD} | tr ' ' '\n' | grep "tagdir" | head -n 1) <(echo ${TTD} | tr ' ' '\n' | grep "tagdir" | head -n 1) > ${OUTP}/${BAMID}.differentialpeaks
+getDifferentialPeaks ${OUTP}/${BAMID}.peaks ${LASTT} ${LASTC} > ${OUTP}/${BAMID}.differentialpeaks
 getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}.peaks -genome hg19 -DESeq2 -b ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.deseq2
 
 # TF motif prediction
