@@ -108,6 +108,11 @@ annotatePeaks.pl ${BAMID}.peaks hg19 -annStats ${BAMID}.homer.annStats > ${BAMID
 
 # create tag directory (should we use normGC? only unique, keepOne?)
 makeTagDirectory tagdir -genome ${HG} -checkGC ${BAMID}.final.bam
+Rscript ${RSCR}/clonalTag.R tagdir/tagCountDistribution.txt
+Rscript ${RSCR}/nuclfreq.R tagdir/tagFreq.txt
+Rscript ${RSCR}/nuclfreq.R tagdir/tagFreqUniq.txt
+Rscript ${RSCR}/autocor.R tagdir/tagAutocorrelation.txt
+Rscript ${RSCR}/gc.R tagdir/genomeGCcontent.txt tagdir/tagGCcontent.txt
 
 # TF motif prediction
 mkdir -p motifs
