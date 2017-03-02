@@ -22,6 +22,7 @@ shift
 
 # Programs
 RSCR=${BASEDIR}/../R
+PY3=${BASEDIR}/python3/bin/
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
@@ -81,7 +82,17 @@ macs2 pileup --ifile ${OUTP}/${BAMID}.bam --ofile ${OUTP}/${BAMID}.bedGraph --fo
 # extend peaks
 bedtools slop -b 100 -i ${OUTP}/${BAMID}_summits.bed -g ${HG}.fai > ${OUTP}/${BAMID}.peaks
 
-# filter peaks
+# filter peaks based on IDR
+unset PYTHONPATH
+export PATH=${PY3}:${PATH}
+IDRSAMPLES=`echo ${CONTROL} | sed 's/.final.bam/_peaks.narrowPeak/g'`
+idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.05
+IDRSAMPLES=`echo ${TREATMENT} | sed 's/.final.bam/_peaks.narrowPeak/g'`
+idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.05
+cat ${OUTP}/${BAMID}.treatment.idr ${OUTP}/${BAMID}.control.idr | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}.idr.peaks
+bedtools intersect -a ${OUTP}/${BAMID}.peaks -b ${OUTP}/${BAMID}.idr.peaks | sort -k1,1V -k2,2n | uniq > ${OUTP}/${OUTP}.peaks.tmp && mv ${OUTP}/${OUTP}.peaks.tmp ${OUTP}/${BAMID}.peaks
+
+# filter peaks against exclude regions
 bedtools intersect -a ${OUTP}/${BAMID}.peaks -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | cut -f 4 | sort | uniq > ${OUTP}/${OUTP}.remove
 cat ${OUTP}/${BAMID}.peaks | grep -v -w -Ff ${OUTP}/${OUTP}.remove > ${OUTP}/${BAMID}.peaks.tmp && mv ${OUTP}/${BAMID}.peaks.tmp ${OUTP}/${BAMID}.peaks
 
