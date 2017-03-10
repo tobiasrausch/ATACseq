@@ -125,7 +125,7 @@ Rscript ${RSCR}/autocor.R tagdir/tagAutocorrelation.txt
 Rscript ${RSCR}/gc.R tagdir/genomeGCcontent.txt tagdir/tagGCcontent.txt
 
 # create bed graph
-makeUCSCfile tagdir -fsize 50e6 -o ${BAMID}.bedGraph.gz
+makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${BAMID}.bedGraph
 
 # TF motif prediction
 mkdir -p motifs
