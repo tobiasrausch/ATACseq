@@ -20,6 +20,8 @@ module load BCFtools
 module load Bowtie2
 module load BEDTools
 module load MACS2
+module load HTSlib
+module load vt
 module load Ghostscript
 module load R-bundle-Bioconductor
 module load alfred

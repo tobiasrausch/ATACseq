@@ -30,6 +30,7 @@ HG=${3}
 OUTP=${4}
 
 # Programs
+FREEBAYES=${BASEDIR}/freebayes/bin/freebayes
 PICARD=${BASEDIR}/picard/picard.jar
 FASTQC=${BASEDIR}/FastQC/fastqc
 RSCR=${BASEDIR}/../R
@@ -90,21 +91,30 @@ rm ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${OUTP}/${BAMID}.srt.clean.rmdup.bam.bai
 alfred -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
 Rscript ${RSCR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
 
-# call peaks
-#macs2 callpeak --gsize hs --nomodel --shift -100 --extsize 200 --broad --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
-macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
-macs2 pileup --ifile ${OUTP}/${BAMID}.final.bam --ofile ${OUTP}/${BAMID}.bedGraph --format BAM --extsize 100
+# FreeBayes
+${FREEBAYES} --no-partial-observations --min-repeat-entropy 1 --report-genotype-likelihood-max --min-alternate-fraction 0.15 --fasta-reference ${HG} --genotype-qualities -b ${OUTP}/${BAMID}.final.bam -v ${OUTP}/${BAMID}.vcf
+bgzip ${OUTP}/${BAMID}.vcf
+tabix ${OUTP}/${BAMID}.vcf.gz
 
-# extend peaks
-cd ${OUTP}
-bedtools slop -b 100 -i ${BAMID}_summits.bed -g ${HG}.fai > ${BAMID}.peaks
+# Normalize VCF
+vt normalize ${OUTP}/${BAMID}.vcf.gz -r ${HG} | vt decompose_blocksub - | vt decompose - | vt uniq - | bgzip > ${OUTP}/${BAMID}.norm.vcf.gz
+tabix ${OUTP}/${BAMID}.norm.vcf.gz
+rm ${OUTP}/${BAMID}.vcf.gz ${OUTP}/${BAMID}.vcf.gz.tbi
+
+# Fixed threshold filtering
+bcftools filter -O z -o ${OUTP}/${BAMID}.norm.filtered.vcf.gz -e '%QUAL<=20 || %QUAL/AO<=2 || SAF<=1 || SAR<=1' ${OUTP}/${BAMID}.norm.vcf.gz
+tabix ${OUTP}/${BAMID}.norm.filtered.vcf.gz
+rm ${OUTP}/${BAMID}.norm.vcf.gz ${OUTP}/${BAMID}.norm.vcf.gz.tbi
+
+# call peaks
+macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
 
 # filter peaks
-bedtools intersect -a ${BAMID}.peaks -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | cut -f 4 | sort | uniq > ${OUTP}.remove
-cat ${BAMID}.peaks | grep -v -w -Ff ${OUTP}.remove > ${BAMID}.peaks.tmp && mv ${BAMID}.peaks.tmp ${BAMID}.peaks
+cd ${OUTP}
+bedtools intersect -a ${BAMID}_peaks.narrowPeak -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) -wao | awk '$11=="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${BAMID}_peaks.narrowPeak.tmp && mv ${BAMID}_peaks.narrowPeak.tmp ${BAMID}_peaks.narrowPeak
 
 # annotate peaks using homer
-annotatePeaks.pl ${BAMID}.peaks hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
+annotatePeaks.pl ${BAMID}_peaks.narrowPeak hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
 
 # create tag directory (should we use normGC? only unique, keepOne?)
 makeTagDirectory tagdir -genome ${HG} -checkGC ${BAMID}.final.bam
@@ -114,9 +124,12 @@ Rscript ${RSCR}/nuclfreq.R tagdir/tagFreqUniq.txt
 Rscript ${RSCR}/autocor.R tagdir/tagAutocorrelation.txt
 Rscript ${RSCR}/gc.R tagdir/genomeGCcontent.txt tagdir/tagGCcontent.txt
 
+# create bed graph
+makeUCSCfile tagdir -fsize 50e6 -o ${BAMID}.bedGraph.gz
+
 # TF motif prediction
 mkdir -p motifs
-findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
+findMotifsGenome.pl ${BAMID}_peaks.narrowPeak hg19 motifs/ -size 50 -mask
 
 # Clean-up tmp
 if [ -n "${SCRATCHDIR}" ]

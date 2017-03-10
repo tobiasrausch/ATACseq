@@ -1,7 +1,10 @@
 SHELL := /bin/bash
 
+# Sources
+FREEBAYSOURCES = $(wildcard src/freebayes/src/*.cpp) $(wildcard src/freebayes/src/*.h)
+
 # Targets
-TARGETS = .fastqc .homer .idr .picard 
+TARGETS = .fastqc .homer .idr .picard .freebayes
 PBASE=$(shell pwd)
 
 all:   	$(TARGETS)
@@ -18,6 +21,10 @@ all:   	$(TARGETS)
 .picard:
 	module load Java && mkdir -p src/picard/ && cd src/picard && wget -O picard.jar 'https://github.com/broadinstitute/picard/releases/download/2.8.3/picard.jar' && cd ../../ && touch .picard
 
+.freebayes:
+	module load foss HTSlib CMake && cd src/freebayes && make && cd ../../ && touch .freebayes
+
 clean:
+	cd src/freebayes && make clean
 	mv src/homer/configureHomer.pl . && rm -rf src/homer/ && mkdir -p src/homer/ && mv configureHomer.pl src/homer/
 	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/picard/ src/python3/ src/idr-2.0.3/

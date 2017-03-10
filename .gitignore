@@ -2,6 +2,7 @@
 .fastqc
 .idr
 .homer
+.freebayes
 src/FastQC
 src/homer
 src/picard
