@@ -75,38 +75,85 @@ done
 samtools merge ${OUTP}/${BAMID}.bam ${CONTROL} ${TREATMENT}
 samtools index ${OUTP}/${BAMID}.bam
 
+# Pseudo replicates for control
+if [ `echo ${CONTROL} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
+then
+    LRANDOM=`samtools idxstats ${CONTROL} | awk '{SUM+=$3+$4;} END {print SUM/2}'`
+    samtools view ${CONTROL} | shuf | split -d -l ${LRANDOM} - ${OUTP}/control.rep
+    samtools view -H ${CONTROL} > ${OUTP}/control.rep1.sam
+    cat ${OUTP}/control.rep00 >> ${OUTP}/control.rep1.sam
+    samtools view -H ${CONTROL} > ${OUTP}/control.rep2.sam
+    cat ${OUTP}/control.rep01 >> ${OUTP}/control.rep2.sam
+    rm ${OUTP}/control.rep00 ${OUTP}/control.rep01
+    samtools sort -o ${OUTP}/control.rep1.bam ${OUTP}/control.rep1.sam
+    samtools index ${OUTP}/control.rep1.bam
+    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/control.rep1 --treatment ${OUTP}/${BAMID}.bam
+    samtools sort -o ${OUTP}/control.rep2.bam ${OUTP}/control.rep2.sam
+    samtools index ${OUTP}/control.rep2.bam
+    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/control.rep2 --treatment ${OUTP}/${BAMID}.bam
+    rm ${OUTP}/control.rep1.sam ${OUTP}/control.rep2.sam
+fi
+
+# Pseudo replicates for treatment
+if [ `echo ${TREATMENT} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
+then
+    LRANDOM=`samtools idxstats ${TREATMENT} | awk '{SUM+=$3+$4;} END {print SUM/2}'`
+    samtools view ${TREATMENT} | shuf | split -d -l ${LRANDOM} - ${OUTP}/treatment.rep
+    samtools view -H ${TREATMENT} > ${OUTP}/treatment.rep1.sam
+    cat ${OUTP}/treatment.rep00 >> ${OUTP}/treatment.rep1.sam
+    samtools view -H ${TREATMENT} > ${OUTP}/treatment.rep2.sam
+    cat ${OUTP}/treatment.rep01 >> ${OUTP}/treatment.rep2.sam
+    rm ${OUTP}/treatment.rep00 ${OUTP}/treatment.rep01
+    samtools sort -o ${OUTP}/treatment.rep1.bam ${OUTP}/treatment.rep1.sam
+    samtools index ${OUTP}/treatment.rep1.bam
+    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/treatment.rep1 --treatment ${OUTP}/${BAMID}.bam
+    samtools sort -o ${OUTP}/treatment.rep2.bam ${OUTP}/treatment.rep2.sam
+    samtools index ${OUTP}/treatment.rep2.bam
+    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/treatment.rep2 --treatment ${OUTP}/${BAMID}.bam
+    rm ${OUTP}/treatment.rep1.sam ${OUTP}/treatment.rep2.sam
+fi
+
 # call peaks
 macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.bam
-macs2 pileup --ifile ${OUTP}/${BAMID}.bam --ofile ${OUTP}/${BAMID}.bedGraph --format BAM --extsize 100
 
-# extend peaks
-bedtools slop -b 100 -i ${OUTP}/${BAMID}_summits.bed -g ${HG}.fai > ${OUTP}/${BAMID}.peaks
+# filter peaks
+cd ${OUTP}
+bedtools intersect -a ${BAMID}_peaks.narrowPeak -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) -wao | awk '$11=="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${BAMID}_peaks.narrowPeak.tmp && mv ${BAMID}_peaks.narrowPeak.tmp ${BAMID}_peaks.narrowPeak
+cd ..
 
 # filter peaks based on IDR
 unset PYTHONPATH
 export PATH=${PY3}:${PATH}
-IDRSAMPLES=`echo ${CONTROL} | sed 's/.final.bam/_peaks.narrowPeak/g'`
-idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.05
-IDRSAMPLES=`echo ${TREATMENT} | sed 's/.final.bam/_peaks.narrowPeak/g'`
-idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.05
+if [ `echo ${CONTROL} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
+then
+    idr --samples ${OUTP}/control.rep1_peaks.narrowPeak ${OUTP}/control.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.05
+else
+    IDRSAMPLES=`echo ${CONTROL} | sed 's/.final.bam/_peaks.narrowPeak/g'`
+    idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.05
+fi
+if [ `echo ${TREATMENT} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
+then
+    idr --samples ${OUTP}/treatment.rep1_peaks.narrowPeak ${OUTP}/treatment.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.05
+else
+    IDRSAMPLES=`echo ${TREATMENT} | sed 's/.final.bam/_peaks.narrowPeak/g'`
+    idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.05
+fi
 cat ${OUTP}/${BAMID}.treatment.idr ${OUTP}/${BAMID}.control.idr | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}.idr.peaks
-bedtools intersect -a ${OUTP}/${BAMID}.peaks -b ${OUTP}/${BAMID}.idr.peaks -wao | awk '$6!="."' | cut -f 1-5 | sort -k1,1V -k2,2n | uniq > ${OUTP}/${OUTP}.peaks.tmp && mv ${OUTP}/${OUTP}.peaks.tmp ${OUTP}/${BAMID}.peaks
-
-# filter peaks against exclude regions
-bedtools intersect -a ${OUTP}/${BAMID}.peaks -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | cut -f 4 | sort | uniq > ${OUTP}/${OUTP}.remove
-cat ${OUTP}/${BAMID}.peaks | grep -v -w -Ff ${OUTP}/${OUTP}.remove > ${OUTP}/${BAMID}.peaks.tmp && mv ${OUTP}/${BAMID}.peaks.tmp ${OUTP}/${BAMID}.peaks
+bedtools intersect -a ${OUTP}/${BAMID}_peaks.narrowPeak -b ${OUTP}/${BAMID}.idr.peaks -wao | awk '$11!="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${BAMID}_peaks.narrowPeak.tmp && mv ${BAMID}_peaks.narrowPeak.tmp ${BAMID}_peaks.narrowPeak
 
 # quantify peaks (or -len 0 or -mask)
-annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -size given -noadj -raw -noann -nogene -d ${CTD} ${TTD} > ${OUTP}/${BAMID}.quant.raw.peaks
+annotatePeaks.pl ${OUTP}/${BAMID}_peaks.narrowPeak hg19 -size given -noadj -raw -noann -nogene -d ${CTD} ${TTD} > ${OUTP}/${BAMID}_peaks.narrowPeak.quant
 
 # get differential peaks
-getDifferentialPeaks ${OUTP}/${BAMID}.peaks ${LASTT} ${LASTC} > ${OUTP}/${BAMID}.differentialpeaks
-getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}.peaks -genome hg19 -DESeq2 -b ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.deseq2
+getDifferentialPeaks ${OUTP}/${BAMID}_peaks.narrowPeak ${LASTT} ${LASTC} > ${OUTP}/${BAMID}.differentialpeaks
+getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -i ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.imode.deseq2
+getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.bmode.deseq2
+getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${TTD} -t ${CTD} > ${OUTP}/${BAMID}.flipmode.deseq2
 
 # TF motif prediction
 cd ${OUTP}
 mkdir -p motifs
-findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
+findMotifsGenome.pl ${BAMID}_peaks.narrowPeak hg19 motifs/ -size 50 -mask
 
 # Clean-up tmp
 if [ -n "${SCRATCHDIR}" ]
