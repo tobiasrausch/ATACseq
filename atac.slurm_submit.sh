@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH -A korbel                   # group to which you belong
-#SBATCH -p 1month                   # partition (queue)
+#SBATCH -p 1day                     # partition (queue)
 #SBATCH -N 1                        # number of nodes
 #SBATCH -n 4                        # number of cores
 #SBATCH --mem 16000M                # memory pool for all cores
-#SBATCH -t 10-2:00                  # time (D-HH:MM)
+#SBATCH -t 24:00:00                 # time
 #SBATCH -o atac.%N.%j.out           # STDOUT
 #SBATCH -e atac.%N.%j.err           # STDERR
 #SBATCH --mail-type=FAIL            # notifications for job done & fail

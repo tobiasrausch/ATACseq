@@ -126,29 +126,29 @@ unset PYTHONPATH
 export PATH=${PY3}:${PATH}
 if [ `echo ${CONTROL} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
 then
-    idr --samples ${OUTP}/control.rep1_peaks.narrowPeak ${OUTP}/control.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.05
+    idr --samples ${OUTP}/control.rep1_peaks.narrowPeak ${OUTP}/control.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.01
 else
     IDRSAMPLES=`echo ${CONTROL} | sed 's/.final.bam/_peaks.narrowPeak/g'`
     idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.05
 fi
 if [ `echo ${TREATMENT} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
 then
-    idr --samples ${OUTP}/treatment.rep1_peaks.narrowPeak ${OUTP}/treatment.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.05
+    idr --samples ${OUTP}/treatment.rep1_peaks.narrowPeak ${OUTP}/treatment.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.01
 else
     IDRSAMPLES=`echo ${TREATMENT} | sed 's/.final.bam/_peaks.narrowPeak/g'`
     idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.05
 fi
 cat ${OUTP}/${BAMID}.treatment.idr ${OUTP}/${BAMID}.control.idr | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}.idr.peaks
-bedtools intersect -a ${OUTP}/${BAMID}_peaks.narrowPeak -b ${OUTP}/${BAMID}.idr.peaks -wao | awk '$11!="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${BAMID}_peaks.narrowPeak.tmp && mv ${BAMID}_peaks.narrowPeak.tmp ${BAMID}_peaks.narrowPeak
+bedtools intersect -a ${OUTP}/${BAMID}_peaks.narrowPeak -b ${OUTP}/${BAMID}.idr.peaks -wao | awk '$11!="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}_peaks.narrowPeak.tmp && mv ${OUTP}/${BAMID}_peaks.narrowPeak.tmp ${OUTP}/${BAMID}_peaks.narrowPeak
 
 # quantify peaks (or -len 0 or -mask)
 annotatePeaks.pl ${OUTP}/${BAMID}_peaks.narrowPeak hg19 -size given -noadj -raw -noann -nogene -d ${CTD} ${TTD} > ${OUTP}/${BAMID}_peaks.narrowPeak.quant
 
 # get differential peaks
-getDifferentialPeaks ${OUTP}/${BAMID}_peaks.narrowPeak ${LASTT} ${LASTC} > ${OUTP}/${BAMID}.differentialpeaks
-getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -i ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.imode.deseq2
-getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.bmode.deseq2
-getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${TTD} -t ${CTD} > ${OUTP}/${BAMID}.flipmode.deseq2
+getDifferentialPeaks ${OUTP}/${BAMID}_peaks.narrowPeak ${LASTT} ${LASTC} > ${OUTP}/${BAMID}.up.differentialpeaks
+getDifferentialPeaks ${OUTP}/${BAMID}_peaks.narrowPeak ${LASTC} ${LASTT} > ${OUTP}/${BAMID}.down.differentialpeaks
+getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.up.deseq2
+getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${TTD} -t ${CTD} > ${OUTP}/${BAMID}.down.deseq2
 
 # TF motif prediction
 cd ${OUTP}
