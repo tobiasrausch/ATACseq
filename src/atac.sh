@@ -34,6 +34,7 @@ FREEBAYES=${BASEDIR}/freebayes/bin/freebayes
 PICARD=${BASEDIR}/picard/picard.jar
 FASTQC=${BASEDIR}/FastQC/fastqc
 RSCR=${BASEDIR}/../R
+PY3=${BASEDIR}/python3/bin/
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
@@ -121,6 +122,8 @@ rm ${OUTP}/${BAMID}.rep00 ${OUTP}/${BAMID}.rep01
 # Run stats using filtered BAM, TSS enrichment, error rates, etc.
 alfred -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
 Rscript ${RSCR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
+MICOL=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
+ISIZE=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
 
 # FreeBayes
 ${FREEBAYES} --no-partial-observations --min-repeat-entropy 1 --report-genotype-likelihood-max --min-alternate-fraction 0.15 --fasta-reference ${HG} --genotype-qualities -b ${OUTP}/${BAMID}.final.bam -v ${OUTP}/${BAMID}.vcf
@@ -138,16 +141,26 @@ tabix ${OUTP}/${BAMID}.norm.filtered.vcf.gz
 rm ${OUTP}/${BAMID}.norm.vcf.gz ${OUTP}/${BAMID}.norm.vcf.gz.tbi
 
 # call peaks
-macs2 callpeak -g hs --nomodel --keep-dup all -n ${OUTP}/${BAMID} -t ${OUTP}/${BAMID}.final.bam
-macs2 callpeak -g hs --nomodel --keep-dup all -n ${OUTP}/${BAMID}.rep1 -t ${OUTP}/${BAMID}.pseudorep1.bam
-macs2 callpeak -g hs --nomodel --keep-dup all -n ${OUTP}/${BAMID}.rep2 -t ${OUTP}/${BAMID}.pseudorep2.bam
+for PEAKBAM in ${OUTP}/${BAMID}.final.bam ${OUTP}/${BAMID}.pseudorep1.bam ${OUTP}/${BAMID}.pseudorep2.bam
+do
+    PEAKN=`echo ${PEAKBAM} | sed 's/.bam$//'`
+    macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZE} -n ${PEAKN} -t ${PEAKBAM}
 
-# filter peaks
-cd ${OUTP}
-bedtools intersect -a ${BAMID}_peaks.narrowPeak -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) -wao | awk '$11=="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${BAMID}_peaks.narrowPeak.tmp && mv ${BAMID}_peaks.narrowPeak.tmp ${BAMID}_peaks.narrowPeak
+    # filter peaks
+    bedtools intersect -v -a ${PEAKN}_peaks.narrowPeak -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | sort -k1,1V -k2,2n | uniq > ${PEAKN}_peaks.narrowPeak.tmp && mv ${PEAKN}_peaks.narrowPeak.tmp ${PEAKN}_peaks.narrowPeak
+done
+
+# filter peaks based on IDR
+unset PYTHONPATH
+export PATH=${PY3}:${PATH}
+IDRTHRES=0.1
+idr --samples ${OUTP}/${BAMID}.pseudorep1_peaks.narrowPeak ${OUTP}/${BAMID}.pseudorep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}.final_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}/${BAMID}.idr.log
+IDRCUT=`echo "-l(${IDRTHRES})/l(10)" | bc -l`
+cat ${OUTP}/${BAMID}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}/${BAMID}.peaks 
 
 # annotate peaks using homer
-annotatePeaks.pl ${BAMID}_peaks.narrowPeak hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
+cd ${OUTP}
+annotatePeaks.pl ${BAMID}.peaks hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
 
 # create tag directory (should we use normGC? only unique, keepOne?)
 makeTagDirectory tagdir -genome ${HG} -checkGC ${BAMID}.final.bam
@@ -162,7 +175,7 @@ makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${BAMID}.bedGraph
 
 # TF motif prediction
 mkdir -p motifs
-findMotifsGenome.pl ${BAMID}_peaks.narrowPeak hg19 motifs/ -size 50 -mask
+findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
 
 # Clean-up tmp
 if [ -n "${SCRATCHDIR}" ]
