@@ -33,4 +33,5 @@ ATACSCRIPT=${1}
 shift
 
 # Run analysis pipeline
+ls ${ATACSCRIPT}
 ${ATACSCRIPT} $@

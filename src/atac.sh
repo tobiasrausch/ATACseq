@@ -21,7 +21,7 @@ export PATH=${BASEDIR}/homer/bin:${PATH}
 
 # Custom parameters
 THREADS=4
-QUAL=10      # Mapping quality threshold
+QUAL=30      # Mapping quality threshold
 
 # CMD parameters
 FQ1=${1}
@@ -86,9 +86,37 @@ samtools flagstat ${OUTP}/${BAMID}.srt.clean.rmdup.bam > ${OUTP}/${OUTP}.flagsta
 
 # Filter duplicates, mapping quality > QUAL, unmapped reads, chrM and unplaced contigs
 CHRS=`cat ${BASEDIR}/../bed/tss.bed | cut -f 1 | sort -k1,1V -k2,2n | uniq | tr '\n' ' '`
-samtools view -F 1024 -q ${QUAL} -b ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${CHRS} > ${OUTP}/${BAMID}.final.bam
-samtools index ${OUTP}/${BAMID}.final.bam
+samtools view -F 1804 -f 2 -q ${QUAL} -b ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${CHRS} > ${OUTP}/${BAMID}.filt.bam
+samtools index ${OUTP}/${BAMID}.filt.bam
 rm ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${OUTP}/${BAMID}.srt.clean.rmdup.bam.bai
+
+# Only keep proper paired-ends
+samtools sort -o ${OUTP}/${BAMID}.namesort.bam -n ${OUTP}/${BAMID}.filt.bam
+rm ${OUTP}/${BAMID}.filt.bam ${OUTP}/${BAMID}.filt.bam.bai
+samtools fixmate -r ${OUTP}/${BAMID}.namesort.bam ${OUTP}/${BAMID}.fixmate.bam
+rm ${OUTP}/${BAMID}.namesort.bam
+samtools sort -o ${OUTP}/${BAMID}.final.bam ${OUTP}/${BAMID}.fixmate.bam
+samtools index ${OUTP}/${BAMID}.final.bam
+
+# Generate pseudo-replicates
+LRANDOM=`samtools idxstats ${OUTP}/${BAMID}.final.bam | awk '{SUM+=$3+$4;} END {print (int(SUM/4)+1);}'`
+samtools view ${OUTP}/${BAMID}.fixmate.bam |  sed 'N;s/\n/@\t@/' | shuf | split -d -l ${LRANDOM} - ${OUTP}/${BAMID}.rep
+rm ${OUTP}/${BAMID}.fixmate.bam
+samtools view -H ${OUTP}/${BAMID}.final.bam > ${OUTP}/${BAMID}.rep1.sam
+cat ${OUTP}/${BAMID}.rep00 | sed 's/@\t@/\n/' >> ${OUTP}/${BAMID}.rep1.sam
+samtools view -b ${OUTP}/${BAMID}.rep1.sam > ${OUTP}/${BAMID}.rep1.bam
+rm ${OUTP}/${BAMID}.rep1.sam
+samtools sort -o ${OUTP}/${BAMID}.pseudorep1.bam ${OUTP}/${BAMID}.rep1.bam
+samtools index ${OUTP}/${BAMID}.pseudorep1.bam
+rm ${OUTP}/${BAMID}.rep1.bam
+samtools view -H ${OUTP}/${BAMID}.final.bam > ${OUTP}/${BAMID}.rep2.sam
+cat ${OUTP}/${BAMID}.rep01 | sed 's/@\t@/\n/' >> ${OUTP}/${BAMID}.rep2.sam
+samtools view -b ${OUTP}/${BAMID}.rep2.sam > ${OUTP}/${BAMID}.rep2.bam
+rm ${OUTP}/${BAMID}.rep2.sam
+samtools sort -o ${OUTP}/${BAMID}.pseudorep2.bam ${OUTP}/${BAMID}.rep2.bam
+samtools index ${OUTP}/${BAMID}.pseudorep2.bam
+rm ${OUTP}/${BAMID}.rep2.bam
+rm ${OUTP}/${BAMID}.rep00 ${OUTP}/${BAMID}.rep01
 
 # Run stats using filtered BAM, TSS enrichment, error rates, etc.
 alfred -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
@@ -110,7 +138,9 @@ tabix ${OUTP}/${BAMID}.norm.filtered.vcf.gz
 rm ${OUTP}/${BAMID}.norm.vcf.gz ${OUTP}/${BAMID}.norm.vcf.gz.tbi
 
 # call peaks
-macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.final.bam
+macs2 callpeak -g hs --nomodel --keep-dup all -n ${OUTP}/${BAMID} -t ${OUTP}/${BAMID}.final.bam
+macs2 callpeak -g hs --nomodel --keep-dup all -n ${OUTP}/${BAMID}.rep1 -t ${OUTP}/${BAMID}.pseudorep1.bam
+macs2 callpeak -g hs --nomodel --keep-dup all -n ${OUTP}/${BAMID}.rep2 -t ${OUTP}/${BAMID}.pseudorep2.bam
 
 # filter peaks
 cd ${OUTP}
