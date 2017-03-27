@@ -170,8 +170,11 @@ Rscript ${RSCR}/nuclfreq.R tagdir/tagFreqUniq.txt
 Rscript ${RSCR}/autocor.R tagdir/tagAutocorrelation.txt
 Rscript ${RSCR}/gc.R tagdir/genomeGCcontent.txt tagdir/tagGCcontent.txt
 
-# create bed graph
+# create UCSC files
 makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${BAMID}.bedGraph
+echo "track type=narrowPeak visibility=3 db=hg19 name=\"${BAMID}\" description=\"${BAMID} narrowPeaks\"" | gzip -c > ${BAMID}.narrowPeak.ucsc.bed.gz
+echo "browser position chr12:125400362-125403757" | gzip -c >> ${BAMID}.narrowPeak.ucsc.bed.gz
+cat ${BAMID}.peaks | gzip -c >> ${BAMID}.narrowPeak.ucsc.bed.gz
 
 # TF motif prediction
 mkdir -p motifs
