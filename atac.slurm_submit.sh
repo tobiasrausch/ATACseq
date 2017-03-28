@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -A korbel                   # group to which you belong
-#SBATCH -p 1day                     # partition (queue)
+#SBATCH -p 1month                   # partition (queue)
 #SBATCH -N 1                        # number of nodes
 #SBATCH -n 4                        # number of cores
 #SBATCH --mem 16000M                # memory pool for all cores
