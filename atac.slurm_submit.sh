@@ -4,7 +4,7 @@
 #SBATCH -N 1                        # number of nodes
 #SBATCH -n 4                        # number of cores
 #SBATCH --mem 16000M                # memory pool for all cores
-#SBATCH -t 24:00:00                 # time
+#SBATCH -t 96:00:00                 # time
 #SBATCH -o atac.%N.%j.out           # STDOUT
 #SBATCH -e atac.%N.%j.err           # STDERR
 #SBATCH --mail-type=FAIL            # notifications for job done & fail

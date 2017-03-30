@@ -35,6 +35,7 @@ PICARD=${BASEDIR}/picard/picard.jar
 FASTQC=${BASEDIR}/FastQC/fastqc
 RSCR=${BASEDIR}/../R
 PY3=${BASEDIR}/python3/bin/
+IGVTOOLS=${BASEDIR}/IGVTools/igvtools
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
@@ -175,6 +176,9 @@ makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${BAMID}.bedGraph
 echo "track type=narrowPeak visibility=3 db=hg19 name=\"${BAMID}\" description=\"${BAMID} narrowPeaks\"" | gzip -c > ${BAMID}.narrowPeak.ucsc.bed.gz
 echo "browser position chr12:125400362-125403757" | gzip -c >> ${BAMID}.narrowPeak.ucsc.bed.gz
 cat ${BAMID}.peaks | gzip -c >> ${BAMID}.narrowPeak.ucsc.bed.gz
+
+# create IGV files
+${IGVTOOLS} totdf ${BAMID}.bedGraph.gz ${BAMID}.tdf hg19
 
 # TF motif prediction
 mkdir -p motifs

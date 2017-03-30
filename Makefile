@@ -4,10 +4,13 @@ SHELL := /bin/bash
 FREEBAYSOURCES = $(wildcard src/freebayes/src/*.cpp) $(wildcard src/freebayes/src/*.h)
 
 # Targets
-TARGETS = .fastqc .homer .idr .picard .freebayes
+TARGETS = .fastqc .homer .idr .picard .freebayes .igvtools
 PBASE=$(shell pwd)
 
 all:   	$(TARGETS)
+
+.igvtools:
+	cd src/ && wget 'http://data.broadinstitute.org/igv/projects/downloads/igvtools_2.3.91.zip' && unzip igvtools_2.3.91.zip && rm igvtools_2.3.91.zip && cd ../ && touch .igvtools
 
 .fastqc:
 	module load Java && cd src && wget 'http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.5.zip' && unzip fastqc_v0.11.5.zip && chmod 755 FastQC/fastqc && rm fastqc_v0.11.5.zip && cd ../ && touch .fastqc
@@ -27,4 +30,4 @@ all:   	$(TARGETS)
 clean:
 	cd src/freebayes && make clean
 	mv src/homer/configureHomer.pl . && rm -rf src/homer/ && mkdir -p src/homer/ && mv configureHomer.pl src/homer/
-	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/picard/ src/python3/ src/idr-2.0.3/
+	rm -rf $(TARGETS) $(TARGETS:=.o) src/FastQC src/picard/ src/python3/ src/idr-2.0.3/ src/IGVTools/
