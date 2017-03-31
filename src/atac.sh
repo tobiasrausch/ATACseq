@@ -159,6 +159,10 @@ idr --samples ${OUTP}/${BAMID}.pseudorep1_peaks.narrowPeak ${OUTP}/${BAMID}.pseu
 IDRCUT=`echo "-l(${IDRTHRES})/l(10)" | bc -l`
 cat ${OUTP}/${BAMID}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}/${BAMID}.peaks 
 
+# estimate noise as #reads outside IDR peaks
+cat ${OUTP}/${BAMID}.peaks | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}/${BAMID}.idrpeaks.bed
+alfred -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks ${OUTP}/${BAMID}.final.bam
+
 # annotate peaks using homer
 cd ${OUTP}
 annotatePeaks.pl ${BAMID}.peaks hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
