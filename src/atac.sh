@@ -39,10 +39,10 @@ IGVTOOLS=${BASEDIR}/IGVTools/igvtools
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
-if [ -n "${SCRATCHDIR}" ]
+if [ -n "${TMPDIR}" ]
 then
-    export TMP=${SCRATCHDIR}
-    echo "scratch directory" ${SCRATCHDIR}
+    export TMP=${TMPDIR}
+    echo "scratch directory" ${TMPDIR}
 else
     export TMP=/tmp/tmp_atac_${DSTR}
     mkdir -p ${TMP}
@@ -193,9 +193,9 @@ mkdir -p motifs
 findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
 
 # Clean-up tmp
-if [ -n "${SCRATCHDIR}" ]
+if [ -n "${TMPDIR}" ]
 then
-    ls ${SCRATCHDIR}
+    ls ${TMPDIR}
 else
     rm -rf ${TMP}
 fi

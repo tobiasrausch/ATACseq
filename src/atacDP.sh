@@ -2,7 +2,7 @@
 
 if [ $# -lt 4 ]
 then
-    echo "Usage: $0 <genome.fa> <outprefix> -c <controlrep1.bam> -c <controlrep2.bam> ... -t <treatmentrep1.bam> -t <treatmentrep2.bam> ..."
+    echo "Usage: $0 <genome.fa> <outprefix> -c <controlrep1_folder> -c <controlrep2_folder> ... -t <treatmentrep1_folder> -t <treatmentrep2_folder> ..."
     exit -1
 fi
 
@@ -26,10 +26,10 @@ PY3=${BASEDIR}/python3/bin/
 
 # Tmp directory
 DSTR=$(date +'%a_%y%m%d_%H%M')
-if [ -n "${SCRATCHDIR}" ]
+if [ -n "${TMPDIR}" ]
 then
-    export TMP=${SCRATCHDIR}
-    echo "scratch directory" ${SCRATCHDIR}
+    export TMP=${TMPDIR}
+    echo "tmp directory" ${TMPDIR}
 else
     export TMP=/tmp/tmp_atac_${DSTR}
     mkdir -p ${TMP}
@@ -43,122 +43,99 @@ mkdir -p ${OUTP}
 OPTARR=( $@ )
 TYPE="CONTROL"
 CONTROL=""
-CTD=""
-LASTC=""
 TREATMENT=""
-TTD=""
-LASTT=""
 for ((  i = 0 ;  i < ${#OPTARR[@]};  i++  ))
 do
-    if [ ${OPTARR[$i]} == "-c" ]
-    then
+    if [ ${OPTARR[$i]} == "-c" ] ; then
 	TYPE="CONTROL"
-    elif [ ${OPTARR[$i]} == "-t" ]
-    then
+    elif [ ${OPTARR[$i]} == "-t" ] ; then
 	TYPE="TREATMENT"
     else
-	TD=`echo ${OPTARR[$i]} | sed 's/\/[^\/]*$/\/tagdir\//'`
-	if [ ${TYPE} == "CONTROL" ]
-	then
-	    CONTROL=${CONTROL}" "${OPTARR[$i]}
-	    CTD=${CTD}" "${TD}
-	    LASTC=${TD}
+	if [ ${TYPE} == "CONTROL" ] ; then
+	    CONTROL=${CONTROL}" "`echo ${OPTARR[$i]} | sed 's/$/#/'`
 	else
-	    TREATMENT=${TREATMENT}" "${OPTARR[$i]}
-	    TTD=${TTD}" "${TD}
-	    LASTT=${TD}
+	    TREATMENT=${TREATMENT}" "`echo ${OPTARR[$i]} | sed 's/$/#/'`
 	fi
     fi
 done
 
 # Merge filtered BAMs
-samtools merge ${OUTP}/${BAMID}.bam ${CONTROL} ${TREATMENT}
+samtools merge ${OUTP}/${BAMID}.bam `echo ${CONTROL} | sed 's/#/\/*.final.bam /g'` `echo ${TREATMENT} | sed 's/#/\/*.final.bam /g'`
 samtools index ${OUTP}/${BAMID}.bam
 
-# Pseudo replicates for control
-if [ `echo ${CONTROL} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
-then
-    LRANDOM=`samtools idxstats ${CONTROL} | awk '{SUM+=$3+$4;} END {print SUM/2}'`
-    samtools view ${CONTROL} | shuf | split -d -l ${LRANDOM} - ${OUTP}/control.rep
-    samtools view -H ${CONTROL} > ${OUTP}/control.rep1.sam
-    cat ${OUTP}/control.rep00 >> ${OUTP}/control.rep1.sam
-    samtools view -H ${CONTROL} > ${OUTP}/control.rep2.sam
-    cat ${OUTP}/control.rep01 >> ${OUTP}/control.rep2.sam
-    rm ${OUTP}/control.rep00 ${OUTP}/control.rep01
-    samtools sort -o ${OUTP}/control.rep1.bam ${OUTP}/control.rep1.sam
-    samtools index ${OUTP}/control.rep1.bam
-    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/control.rep1 --treatment ${OUTP}/${BAMID}.bam
-    samtools sort -o ${OUTP}/control.rep2.bam ${OUTP}/control.rep2.sam
-    samtools index ${OUTP}/control.rep2.bam
-    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/control.rep2 --treatment ${OUTP}/${BAMID}.bam
-    rm ${OUTP}/control.rep1.sam ${OUTP}/control.rep2.sam
-fi
-
-# Pseudo replicates for treatment
-if [ `echo ${TREATMENT} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
-then
-    LRANDOM=`samtools idxstats ${TREATMENT} | awk '{SUM+=$3+$4;} END {print SUM/2}'`
-    samtools view ${TREATMENT} | shuf | split -d -l ${LRANDOM} - ${OUTP}/treatment.rep
-    samtools view -H ${TREATMENT} > ${OUTP}/treatment.rep1.sam
-    cat ${OUTP}/treatment.rep00 >> ${OUTP}/treatment.rep1.sam
-    samtools view -H ${TREATMENT} > ${OUTP}/treatment.rep2.sam
-    cat ${OUTP}/treatment.rep01 >> ${OUTP}/treatment.rep2.sam
-    rm ${OUTP}/treatment.rep00 ${OUTP}/treatment.rep01
-    samtools sort -o ${OUTP}/treatment.rep1.bam ${OUTP}/treatment.rep1.sam
-    samtools index ${OUTP}/treatment.rep1.bam
-    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/treatment.rep1 --treatment ${OUTP}/${BAMID}.bam
-    samtools sort -o ${OUTP}/treatment.rep2.bam ${OUTP}/treatment.rep2.sam
-    samtools index ${OUTP}/treatment.rep2.bam
-    macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/treatment.rep2 --treatment ${OUTP}/${BAMID}.bam
-    rm ${OUTP}/treatment.rep1.sam ${OUTP}/treatment.rep2.sam
-fi
+# Run stats
+alfred -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.bam
+Rscript ${RSCR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
+MICOL=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
+ISIZE=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
+rm ${OUTP}/${OUTP}.bamStats.coverage.tsv ${OUTP}/${OUTP}.bamStats.bedcov.tsv ${OUTP}/${OUTP}.bamStats.ontarget.tsv
+rm ${OUTP}/${OUTP}.bamStats.mapq.tsv
 
 # call peaks
-macs2 callpeak --gsize hs --nomodel --nolambda --keep-dup all --call-summits --name ${OUTP}/${BAMID} --treatment ${OUTP}/${BAMID}.bam
+macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZE} -n ${OUTP}/${BAMID} -t ${OUTP}/${BAMID}.bam
 
-# filter peaks
-cd ${OUTP}
-bedtools intersect -a ${BAMID}_peaks.narrowPeak -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) -wao | awk '$11=="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${BAMID}_peaks.narrowPeak.tmp && mv ${BAMID}_peaks.narrowPeak.tmp ${BAMID}_peaks.narrowPeak
-cd ..
-
-# filter peaks based on IDR
+# run IDR
 unset PYTHONPATH
 export PATH=${PY3}:${PATH}
-if [ `echo ${CONTROL} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
-then
-    idr --samples ${OUTP}/control.rep1_peaks.narrowPeak ${OUTP}/control.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.01
+IDRTHRES=0.1
+if [ `echo ${CONTROL} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 ] ; then
+    IDRCONTROLSAMPLES=`echo ${CONTROL} | sed 's/#/\/*.pseudorep1_peaks.narrowPeak /'`" "`echo ${CONTROL} | sed 's/#/\/*.pseudorep2_peaks.narrowPeak /'`
 else
-    IDRSAMPLES=`echo ${CONTROL} | sed 's/.final.bam/_peaks.narrowPeak/g'`
-    idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --plot --idr-threshold 0.05
+    IDRCONTROLSAMPLES=`echo ${CONTROL} | sed 's/#/\/*.final_peaks.narrowPeak /g'`
 fi
-if [ `echo ${TREATMENT} | sed 's/[ \t][ \t]*/\n/g' | wc -l | cut -f 1` -eq 1 ]
-then
-    idr --samples ${OUTP}/treatment.rep1_peaks.narrowPeak ${OUTP}/treatment.rep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.01
+if [ `echo ${TREATMENT} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 ] ; then
+    IDRTREATSAMPLES=`echo ${TREATMENT} | sed 's/#/\/*.pseudorep1_peaks.narrowPeak /'`" "`echo ${TREATMENT} | sed 's/#/\/*.pseudorep2_peaks.narrowPeak /'`
 else
-    IDRSAMPLES=`echo ${TREATMENT} | sed 's/.final.bam/_peaks.narrowPeak/g'`
-    idr --samples ${IDRSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --plot --idr-threshold 0.05
+    IDRTREATSAMPLES=`echo ${TREATMENT} | sed 's/#/\/*.final_peaks.narrowPeak /g'`
 fi
-cat ${OUTP}/${BAMID}.treatment.idr ${OUTP}/${BAMID}.control.idr | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}.idr.peaks
-bedtools intersect -a ${OUTP}/${BAMID}_peaks.narrowPeak -b ${OUTP}/${BAMID}.idr.peaks -wao | awk '$11!="."' | cut -f 1-10 | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}_peaks.narrowPeak.tmp && mv ${OUTP}/${BAMID}_peaks.narrowPeak.tmp ${OUTP}/${BAMID}_peaks.narrowPeak
+idr --samples ${IDRCONTROLSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.control.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}/${BAMID}.control.idr.log
+echo "Samples " ${IDRCONTROLSAMPLES} >> ${OUTP}/${BAMID}.control.idr.log
+idr --samples ${IDRTREATSAMPLES} --peak-list ${OUTP}/${BAMID}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.treatment.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}/${BAMID}.treatment.idr.log
+echo "Samples " ${IDRTREATSAMPLES} >> ${OUTP}/${BAMID}.treatment.idr.log
+
+# filter peaks based on IDR
+IDRCUT=`echo "-l(${IDRTHRES})/l(10)" | bc -l`
+cat ${OUTP}/${BAMID}.control.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}/${BAMID}.control.peaks
+cat ${OUTP}/${BAMID}.treatment.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}/${BAMID}.treatment.peaks
+
+# estimate noise as #reads outside IDR peaks
+cat ${OUTP}/${BAMID}.treatment.idr ${OUTP}/${BAMID}.control.idr | cut -f 1-3 | sort -k1,1V -k2,2n | uniq | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}/${BAMID}.idrpeaks.bed
+alfred -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks ${OUTP}/${BAMID}.bam
+rm ${OUTP}/${OUTP}.idrpeaks.coverage.tsv ${OUTP}/${OUTP}.idrpeaks.bedcov.tsv ${OUTP}/${OUTP}.idrpeaks.isize.tsv
+rm ${OUTP}/${OUTP}.idrpeaks.mapq.tsv ${OUTP}/${OUTP}.idrpeaks.ontarget.tsv ${OUTP}/${OUTP}.idrpeaks.readlength.tsv
+
+# subset peaks to IDR-filtered peaks
+bedtools intersect -a ${OUTP}/${BAMID}_peaks.narrowPeak -b ${OUTP}/${BAMID}.idrpeaks.bed | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}.peaks
 
 # quantify peaks (or -len 0 or -mask)
-annotatePeaks.pl ${OUTP}/${BAMID}_peaks.narrowPeak hg19 -size given -noadj -raw -noann -nogene -d ${CTD} ${TTD} > ${OUTP}/${BAMID}_peaks.narrowPeak.quant
+annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -size given -noadj -raw -noann -nogene -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}/${BAMID}.peaks.quant
 
 # get differential peaks
-getDifferentialPeaks ${OUTP}/${BAMID}_peaks.narrowPeak ${LASTT} ${LASTC} > ${OUTP}/${BAMID}.up.differentialpeaks
-getDifferentialPeaks ${OUTP}/${BAMID}_peaks.narrowPeak ${LASTC} ${LASTT} > ${OUTP}/${BAMID}.down.differentialpeaks
-getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${CTD} -t ${TTD} > ${OUTP}/${BAMID}.up.deseq2
-getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}_peaks.narrowPeak -genome hg19 -DESeq2 -b ${TTD} -t ${CTD} > ${OUTP}/${BAMID}.down.deseq2
+if [ \( `echo ${CONTROL} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 \) -o \( `echo ${TREATMENT} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 \) ] ; then
+    # No replicates
+    getDifferentialPeaks ${OUTP}/${BAMID}.peaks `echo ${TREATMENT} | sed 's/#.*$/\/tagdir\/ /'` `echo ${CONTROL} | sed 's/#.*$/\/tagdir\/ /'` > ${OUTP}/${BAMID}.up.differentialpeaks
+    getDifferentialPeaks ${OUTP}/${BAMID}.peaks `echo ${CONTROL} | sed 's/#.*$/\/tagdir\/ /'` `echo ${TREATMENT} | sed 's/#.*$/\/tagdir\/ /'` > ${OUTP}/${BAMID}.down.differentialpeaks
+else
+    # Replicates
+    getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}.peaks -genome hg19 -DESeq2 -b `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` -t `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}/${BAMID}.up.differentialpeaks
+    getDifferentialPeaksReplicates.pl -p ${OUTP}/${BAMID}.peaks -genome hg19 -DESeq2 -b `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` -t `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}/${BAMID}.down.differentialpeaks
+fi
 
-# TF motif prediction
-cd ${OUTP}
-mkdir -p motifs
-findMotifsGenome.pl ${BAMID}_peaks.narrowPeak hg19 motifs/ -size 50 -mask
+# Annotate differential peaks
+for DIRID in up down
+do
+    cut -f 2-4 ${OUTP}/${BAMID}.${DIRID}.differentialpeaks | tail -n +2 | sort -k1,1V -k2,2n | awk '{print $0"\tPeak"NR;}' > ${OUTP}/${BAMID}.${DIRID}.peaks
+    cd ${OUTP}
+    annotatePeaks.pl ${BAMID}.${DIRID}.peaks hg19 -annStats ${BAMID}.${DIRID}.homer.annStats -go go${DIRID} > ${BAMID}.${DIRID}.annotated.peaks
+    mkdir -p motifs${DIRID}
+    findMotifsGenome.pl ${BAMID}.${DIRID}.peaks hg19 motifs${DIRID}/ -size 50 -mask
+    cd ../
+done
 
 # Clean-up tmp
-if [ -n "${SCRATCHDIR}" ]
+if [ -n "${TMPDIR}" ]
 then
-    ls ${SCRATCHDIR}
+    ls ${TMPDIR}
 else
     rm -rf ${TMP}
 fi
