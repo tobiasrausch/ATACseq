@@ -9,7 +9,7 @@
 #SBATCH -t 96:00:00                 # time
 #SBATCH -o atac.%N.%j.out           # STDOUT
 #SBATCH -e atac.%N.%j.err           # STDERR
-#SBATCH --mail-type=END,FAIL        # notifications for job done & fail
+#SBATCH --mail-type=FAIL            # notifications for job done & fail
 #SBATCH --mail-user=rausch@embl.de  # send-to address
 #SBATCH --tmp=50G
 #SBATCH --hint=compute_bound
