@@ -121,7 +121,7 @@ rm ${OUTP}/${BAMID}.rep2.bam
 rm ${OUTP}/${BAMID}.rep00 ${OUTP}/${BAMID}.rep01
 
 # Run stats using filtered BAM, TSS enrichment, error rates, etc.
-alfred -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
+alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
 Rscript ${RSCR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
 MICOL=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
 ISIZE=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
@@ -163,7 +163,7 @@ cat ${OUTP}/${BAMID}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}/${BA
 
 # estimate noise as #reads outside IDR peaks
 cat ${OUTP}/${BAMID}.peaks | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}/${BAMID}.idrpeaks.bed
-alfred -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks ${OUTP}/${BAMID}.final.bam
+alfred qc -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks ${OUTP}/${BAMID}.final.bam
 rm ${OUTP}/${BAMID}.idrpeaks.bed ${OUTP}/${OUTP}.idrpeaks.coverage.tsv ${OUTP}/${OUTP}.idrpeaks.bedcov.tsv ${OUTP}/${OUTP}.idrpeaks.isize.tsv
 rm ${OUTP}/${OUTP}.idrpeaks.mapq.tsv ${OUTP}/${OUTP}.idrpeaks.ontarget.tsv ${OUTP}/${OUTP}.idrpeaks.readlength.tsv
 
