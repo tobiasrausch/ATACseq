@@ -124,7 +124,7 @@ fi
 # Annotate differential peaks
 for DIRID in up down
 do
-    cut -f 1-4 ${OUTP}/${BAMID}.${DIRID}.differentialpeaks | tail -n +2 | sort -k2,2V -k3,3n | awk '{print $2"\t"$3"\t"$4"\t"$1;}' > ${OUTP}/${BAMID}.${DIRID}.peaks
+    cut -f 1-4 ${OUTP}/${BAMID}.${DIRID}.differentialpeaks | grep -v "^#" | sort -k2,2V -k3,3n | awk '{print $2"\t"$3"\t"$4"\t"$1;}' > ${OUTP}/${BAMID}.${DIRID}.peaks
     cd ${OUTP}
     annotatePeaks.pl ${BAMID}.${DIRID}.peaks hg19 -annStats ${BAMID}.${DIRID}.homer.annStats -go go${DIRID} > ${BAMID}.${DIRID}.annotated.peaks
     mkdir -p motifs${DIRID}
