@@ -179,6 +179,9 @@ Rscript ${RSCR}/nuclfreq.R tagdir/tagFreqUniq.txt
 Rscript ${RSCR}/autocor.R tagdir/tagAutocorrelation.txt
 Rscript ${RSCR}/gc.R tagdir/genomeGCcontent.txt tagdir/tagGCcontent.txt
 
+# Quantify peaks
+annotatePeaks.pl ${BAMID}.peaks hg19 -size given -noann -nogene -d tagdir > ${BAMID}.peaks.quant
+
 # create UCSC files
 makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${BAMID}.bedGraph
 echo "track type=narrowPeak visibility=3 db=hg19 name=\"${BAMID}\" description=\"${BAMID} narrowPeaks\"" | gzip -c > ${BAMID}.narrowPeak.ucsc.bed.gz
