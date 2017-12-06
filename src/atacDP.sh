@@ -110,6 +110,12 @@ bedtools intersect -a ${OUTP}/${BAMID}_peaks.narrowPeak -b ${OUTP}/${BAMID}.idrp
 # quantify peaks (or -len 0 or -mask)
 annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -size given -noadj -raw -noann -nogene -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}/${BAMID}.peaks.quant
 
+# normalized tag counts
+annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -size given -noann -nogene -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}/${BAMID}.peaks.normalized
+
+# Annotated and normalized peaks
+annotatePeaks.pl ${OUTP}/${BAMID}.peaks hg19 -size given -annStats ${OUTP}/${BAMID}.${DIRID}.homer.annStats -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}/${BAMID}.annotated.normalized
+
 # get differential peaks
 if [ \( `echo ${CONTROL} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 \) -o \( `echo ${TREATMENT} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 \) ] ; then
     # No replicates

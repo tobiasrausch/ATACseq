@@ -180,7 +180,10 @@ Rscript ${RSCR}/autocor.R tagdir/tagAutocorrelation.txt
 Rscript ${RSCR}/gc.R tagdir/genomeGCcontent.txt tagdir/tagGCcontent.txt
 
 # Quantify peaks
-annotatePeaks.pl ${BAMID}.peaks hg19 -size given -noann -nogene -d tagdir > ${BAMID}.peaks.quant
+annotatePeaks.pl ${BAMID}.peaks hg19 -size given -noann -nogene -d tagdir > ${BAMID}.peaks.normalized
+
+# Annotated and normalized peaks
+annotatePeaks.pl ${BAMID}.peaks hg19 -size given -annStats ${BAMID}.homer.annStats -d tagdir > ${BAMID}.annotated.normalized
 
 # create UCSC files
 makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${BAMID}.bedGraph
