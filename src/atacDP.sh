@@ -131,8 +131,8 @@ fi
 for DIRID in up down
 do
     cut -f 1-4 ${OUTP}/${BAMID}.${DIRID}.differentialpeaks | grep -v "^#" | sort -k2,2V -k3,3n | awk '{print $2"\t"$3"\t"$4"\t"$1;}' > ${OUTP}/${BAMID}.${DIRID}.peaks
+    annotatePeaks.pl ${OUTP}/${BAMID}.${DIRID}.peaks hg19 -size given -annStats ${OUTP}/${BAMID}.${DIRID}.homer.annStats -go ${OUTP}/go${DIRID} -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}/${BAMID}.${DIRID}.annotated.normalized.peaks
     cd ${OUTP}
-    annotatePeaks.pl ${BAMID}.${DIRID}.peaks hg19 -annStats ${BAMID}.${DIRID}.homer.annStats -go go${DIRID} > ${BAMID}.${DIRID}.annotated.peaks
     mkdir -p motifs${DIRID}
     findMotifsGenome.pl ${BAMID}.${DIRID}.peaks hg19 motifs${DIRID}/ -size 50 -mask
     cd ../
