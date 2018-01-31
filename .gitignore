@@ -1,12 +1,7 @@
-.picard
-.fastqc
 .idr
 .homer
-.freebayes
 .igvtools
-src/FastQC
 src/homer
-src/picard
 src/idr-2.0.3
 src/python3
 src/IGVTools/
