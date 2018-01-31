@@ -17,7 +17,8 @@ fi
 SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
-export PATH=${BASEDIR}/homer/bin:${PATH}
+# Add all required binaries
+export PATH=${BASEDIR}/homer/bin:/g/funcgen/bin:${PATH}
 
 # Custom parameters
 THREADS=4
@@ -30,119 +31,99 @@ HG=${3}
 OUTP=${4}
 
 # Programs
-FREEBAYES=${BASEDIR}/freebayes/bin/freebayes
-PICARD=${BASEDIR}/picard/picard.jar
-FASTQC=${BASEDIR}/FastQC/fastqc
 RSCR=${BASEDIR}/../R
 PY3=${BASEDIR}/python3/bin/
 IGVTOOLS=${BASEDIR}/IGVTools/igvtools
 
 # Tmp directory
-DSTR=$(date +'%a_%y%m%d_%H%M')
 if [ -n "${TMPDIR}" ]
 then
     export TMP=${TMPDIR}
-    echo "scratch directory" ${TMPDIR}
-else
-    export TMP=/tmp/tmp_atac_${DSTR}
-    mkdir -p ${TMP}
 fi
-JAVAOPT="-Xms4g -Xmx8g -XX:ParallelGCThreads=${THREADS} -Djava.io.tmpdir=${TMP}"
-PICARDOPT="MAX_RECORDS_IN_RAM=5000000 TMP_DIR=${TMP} VALIDATION_STRINGENCY=SILENT"
 
 # Generate IDs
 FQ1ID=`echo ${OUTP} | sed 's/$/.fq1/'`
 FQ2ID=`echo ${OUTP} | sed 's/$/.fq2/'`
-BAMID=`echo ${OUTP} | sed 's/$/.align/'`
-
-# Fastqc
-mkdir -p ${OUTP}/prefastqc/ && ${FASTQC} -t ${THREADS} -o ${OUTP}/prefastqc/ ${FQ1} && ${FASTQC} -t ${THREADS} -o ${OUTP}/prefastqc/ ${FQ2}
 
 # Adapter trimming
-cutadapt -q 10 -m 15 -e 0.10 -a CTGTCTCTTATA -A CTGTCTCTTATA -o ${OUTP}/${OUTP}.1.fq -p ${OUTP}/${OUTP}.2.fq ${FQ1} ${FQ2} > ${OUTP}/${OUTP}.cutadapt.log
-gzip ${OUTP}/${OUTP}.1.fq
-gzip ${OUTP}/${OUTP}.2.fq
-
-# Fastqc
-mkdir -p ${OUTP}/postfastqc/ && ${FASTQC} -t ${THREADS} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.1.fq.gz && ${FASTQC} -t ${THREADS} -o ${OUTP}/postfastqc/ ${OUTP}/${OUTP}.2.fq.gz
+cutadapt -q 10 -m 15 -e 0.10 -a CTGTCTCTTATA -A CTGTCTCTTATA -o ${OUTP}.1.fq -p ${OUTP}.2.fq ${FQ1} ${FQ2} > ${OUTP}.cutadapt.log
+gzip ${OUTP}.1.fq
+gzip ${OUTP}.2.fq
 
 # Bowtie
-#bowtie2 --threads ${THREADS} --very-sensitive --maxins 2000  --no-discordant --no-mixed -x ${HG} -1 ${OUTP}/${OUTP}.1.fq.gz -2 ${OUTP}/${OUTP}.2.fq.gz
-bowtie2 --threads ${THREADS} --local --maxins 2000 -x ${HG} -1 ${OUTP}/${OUTP}.1.fq.gz -2 ${OUTP}/${OUTP}.2.fq.gz | samtools view -bT ${HG} - > ${OUTP}/${BAMID}.bam
+#bowtie2 --threads ${THREADS} --very-sensitive --maxins 2000  --no-discordant --no-mixed -x ${HG} -1 ${OUTP}.1.fq.gz -2 ${OUTP}.2.fq.gz
+bowtie2 --threads ${THREADS} --local --maxins 2000 -x ${HG} -1 ${OUTP}.1.fq.gz -2 ${OUTP}.2.fq.gz | samtools view -bT ${HG} - > ${OUTP}.raw.bam
 
 # Removed trimmed fastq
-rm ${OUTP}/${OUTP}.1.fq.gz ${OUTP}/${OUTP}.2.fq.gz
+rm ${OUTP}.1.fq.gz ${OUTP}.2.fq.gz
 
 # Sort & Index
-samtools sort -o ${OUTP}/${BAMID}.srt.bam ${OUTP}/${BAMID}.bam && rm ${OUTP}/${BAMID}.bam && samtools index ${OUTP}/${BAMID}.srt.bam
-
-# Clean .bam file
-java ${JAVAOPT} -jar ${PICARD} CleanSam I=${OUTP}/${BAMID}.srt.bam O=${OUTP}/${BAMID}.srt.clean.bam ${PICARDOPT} && rm ${OUTP}/${BAMID}.srt.bam*
+samtools sort -@ ${THREADS} -o ${OUTP}.srt.bam ${OUTP}.raw.bam && rm ${OUTP}.raw.bam && samtools index ${OUTP}.srt.bam
 
 # Mark duplicates
-java ${JAVAOPT} -jar ${PICARD} MarkDuplicates I=${OUTP}/${BAMID}.srt.clean.bam O=${OUTP}/${BAMID}.srt.clean.rmdup.bam M=${OUTP}/${OUTP}.markdups.log PG=null MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 ${PICARDOPT} && rm ${OUTP}/${BAMID}.srt.clean.bam* && samtools index ${OUTP}/${BAMID}.srt.clean.rmdup.bam
+bammarkduplicates markthreads=${THREADS} tmpfile=${OUTP}_`date +'%H%M%S'` I=${OUTP}.srt.bam O=${OUTP}.rmdup.bam M=${OUTP}.metrics.tsv index=1 rmdup=0
+rm ${OUTP}.srt.bam ${OUTP}.srt.bam.bai
 
 # Run stats using unfiltered BAM
-samtools idxstats ${OUTP}/${BAMID}.srt.clean.rmdup.bam > ${OUTP}/${OUTP}.idxstats
-samtools flagstat ${OUTP}/${BAMID}.srt.clean.rmdup.bam > ${OUTP}/${OUTP}.flagstat
+samtools idxstats ${OUTP}.rmdup.bam > ${OUTP}.idxstats
+samtools flagstat ${OUTP}.rmdup.bam > ${OUTP}.flagstat
 
 # Filter duplicates, mapping quality > QUAL, unmapped reads, chrM and unplaced contigs
 CHRS=`cat ${BASEDIR}/../bed/tss.bed | cut -f 1 | sort -k1,1V -k2,2n | uniq | tr '\n' ' '`
-samtools view -F 1804 -f 2 -q ${QUAL} -b ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${CHRS} > ${OUTP}/${BAMID}.filt.bam
-samtools index ${OUTP}/${BAMID}.filt.bam
-rm ${OUTP}/${BAMID}.srt.clean.rmdup.bam ${OUTP}/${BAMID}.srt.clean.rmdup.bam.bai
+samtools view -F 1804 -f 2 -q ${QUAL} -b ${OUTP}.rmdup.bam ${CHRS} > ${OUTP}.filt.bam
+samtools index ${OUTP}.filt.bam
+rm ${OUTP}.rmdup.bam ${OUTP}.rmdup.bam.bai
 
 # Only keep proper paired-ends
-samtools sort -o ${OUTP}/${BAMID}.namesort.bam -n ${OUTP}/${BAMID}.filt.bam
-rm ${OUTP}/${BAMID}.filt.bam ${OUTP}/${BAMID}.filt.bam.bai
-samtools fixmate -r ${OUTP}/${BAMID}.namesort.bam ${OUTP}/${BAMID}.fixmate.bam
-rm ${OUTP}/${BAMID}.namesort.bam
-samtools sort -o ${OUTP}/${BAMID}.final.bam ${OUTP}/${BAMID}.fixmate.bam
-samtools index ${OUTP}/${BAMID}.final.bam
+samtools sort -o ${OUTP}.namesort.bam -n ${OUTP}.filt.bam
+rm ${OUTP}.filt.bam ${OUTP}.filt.bam.bai
+samtools fixmate -r ${OUTP}.namesort.bam ${OUTP}.fixmate.bam
+rm ${OUTP}.namesort.bam
+samtools sort -o ${OUTP}.final.bam ${OUTP}.fixmate.bam
+samtools index ${OUTP}.final.bam
 
 # Generate pseudo-replicates
-LRANDOM=`samtools idxstats ${OUTP}/${BAMID}.final.bam | awk '{SUM+=$3+$4;} END {print (int(SUM/4)+1);}'`
-samtools view ${OUTP}/${BAMID}.fixmate.bam |  sed 'N;s/\n/@\t@/' | shuf | split -d -l ${LRANDOM} - ${OUTP}/${BAMID}.rep
-rm ${OUTP}/${BAMID}.fixmate.bam
-samtools view -H ${OUTP}/${BAMID}.final.bam > ${OUTP}/${BAMID}.rep1.sam
-cat ${OUTP}/${BAMID}.rep00 | sed 's/@\t@/\n/' >> ${OUTP}/${BAMID}.rep1.sam
-samtools view -b ${OUTP}/${BAMID}.rep1.sam > ${OUTP}/${BAMID}.rep1.bam
-rm ${OUTP}/${BAMID}.rep1.sam
-samtools sort -o ${OUTP}/${BAMID}.pseudorep1.bam ${OUTP}/${BAMID}.rep1.bam
-samtools index ${OUTP}/${BAMID}.pseudorep1.bam
-rm ${OUTP}/${BAMID}.rep1.bam
-samtools view -H ${OUTP}/${BAMID}.final.bam > ${OUTP}/${BAMID}.rep2.sam
-cat ${OUTP}/${BAMID}.rep01 | sed 's/@\t@/\n/' >> ${OUTP}/${BAMID}.rep2.sam
-samtools view -b ${OUTP}/${BAMID}.rep2.sam > ${OUTP}/${BAMID}.rep2.bam
-rm ${OUTP}/${BAMID}.rep2.sam
-samtools sort -o ${OUTP}/${BAMID}.pseudorep2.bam ${OUTP}/${BAMID}.rep2.bam
-samtools index ${OUTP}/${BAMID}.pseudorep2.bam
-rm ${OUTP}/${BAMID}.rep2.bam
-rm ${OUTP}/${BAMID}.rep00 ${OUTP}/${BAMID}.rep01
+LRANDOM=`samtools idxstats ${OUTP}.final.bam | awk '{SUM+=$3+$4;} END {print (int(SUM/4)+1);}'`
+samtools view ${OUTP}.fixmate.bam |  sed 'N;s/\n/@\t@/' | shuf | split -d -l ${LRANDOM} - ${OUTP}.rep
+rm ${OUTP}.fixmate.bam
+samtools view -H ${OUTP}.final.bam > ${OUTP}.rep1.sam
+cat ${OUTP}.rep00 | sed 's/@\t@/\n/' >> ${OUTP}.rep1.sam
+samtools view -b ${OUTP}.rep1.sam > ${OUTP}.rep1.bam
+rm ${OUTP}.rep1.sam
+samtools sort -o ${OUTP}.pseudorep1.bam ${OUTP}.rep1.bam
+samtools index ${OUTP}.pseudorep1.bam
+rm ${OUTP}.rep1.bam
+samtools view -H ${OUTP}.final.bam > ${OUTP}.rep2.sam
+cat ${OUTP}.rep01 | sed 's/@\t@/\n/' >> ${OUTP}.rep2.sam
+samtools view -b ${OUTP}.rep2.sam > ${OUTP}.rep2.bam
+rm ${OUTP}.rep2.sam
+samtools sort -o ${OUTP}.pseudorep2.bam ${OUTP}.rep2.bam
+samtools index ${OUTP}.pseudorep2.bam
+rm ${OUTP}.rep2.bam
+rm ${OUTP}.rep00 ${OUTP}.rep01
 
 # Run stats using filtered BAM, TSS enrichment, error rates, etc.
-alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats.tsv.gz ${OUTP}/${BAMID}.final.bam
-Rscript ${RSCR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
-MICOL=`zgrep "^ME" ${OUTP}/${OUTP}.bamStats.tsv.gz | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
-ISIZE=`zgrep "^ME" ${OUTP}/${OUTP}.bamStats.tsv.gz | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
+alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}.bamStats.tsv.gz ${OUTP}.final.bam
+MICOL=`zgrep "^ME" ${OUTP}.bamStats.tsv.gz | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
+ISIZE=`zgrep "^ME" ${OUTP}.bamStats.tsv.gz | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
 
 # FreeBayes
-${FREEBAYES} --no-partial-observations --min-repeat-entropy 1 --report-genotype-likelihood-max --min-alternate-fraction 0.15 --fasta-reference ${HG} --genotype-qualities -b ${OUTP}/${BAMID}.final.bam -v ${OUTP}/${BAMID}.vcf
-bgzip ${OUTP}/${BAMID}.vcf
-tabix ${OUTP}/${BAMID}.vcf.gz
+freebayes --no-partial-observations --min-repeat-entropy 1 --report-genotype-likelihood-max --min-alternate-fraction 0.15 --fasta-reference ${HG} --genotype-qualities -b ${OUTP}.final.bam -v ${OUTP}.vcf
+bgzip ${OUTP}.vcf
+tabix ${OUTP}.vcf.gz
 
 # Normalize VCF
-vt normalize ${OUTP}/${BAMID}.vcf.gz -r ${HG} | vt decompose_blocksub - | vt decompose - | vt uniq - | bgzip > ${OUTP}/${BAMID}.norm.vcf.gz
-tabix ${OUTP}/${BAMID}.norm.vcf.gz
-rm ${OUTP}/${BAMID}.vcf.gz ${OUTP}/${BAMID}.vcf.gz.tbi
+bcftools norm -O z -o ${OUTP}.norm.vcf.gz -f ${GENOME} -m -both ${OUTP}.vcf.gz
+tabix ${OUTP}.norm.vcf.gz
+rm ${OUTP}.vcf.gz ${OUTP}.vcf.gz.tbi
 
 # Fixed threshold filtering
-bcftools filter -O z -o ${OUTP}/${BAMID}.norm.filtered.vcf.gz -e '%QUAL<=20 || %QUAL/AO<=2 || SAF<=1 || SAR<=1' ${OUTP}/${BAMID}.norm.vcf.gz
-tabix ${OUTP}/${BAMID}.norm.filtered.vcf.gz
-rm ${OUTP}/${BAMID}.norm.vcf.gz ${OUTP}/${BAMID}.norm.vcf.gz.tbi
+bcftools filter -O z -o ${OUTP}.norm.filtered.vcf.gz -e '%QUAL<=20 || %QUAL/AO<=2 || SAF<=2 || SAR<=2' ${OUTP}.norm.vcf.gz
+tabix ${OUTP}.norm.filtered.vcf.gz
+rm ${OUTP}.norm.vcf.gz ${OUTP}.norm.vcf.gz.tbi
 
 # call peaks
-for PEAKBAM in ${OUTP}/${BAMID}.final.bam ${OUTP}/${BAMID}.pseudorep1.bam ${OUTP}/${BAMID}.pseudorep2.bam
+for PEAKBAM in ${OUTP}.final.bam ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam
 do
     PEAKN=`echo ${PEAKBAM} | sed 's/.bam$//'`
     macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZE} -n ${PEAKN} -t ${PEAKBAM}
@@ -155,20 +136,20 @@ done
 unset PYTHONPATH
 export PATH=${PY3}:${PATH}
 IDRTHRES=0.1
-idr --samples ${OUTP}/${BAMID}.pseudorep1_peaks.narrowPeak ${OUTP}/${BAMID}.pseudorep2_peaks.narrowPeak --peak-list ${OUTP}/${BAMID}.final_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}/${BAMID}.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}/${BAMID}.idr.log
+idr --samples ${OUTP}.pseudorep1_peaks.narrowPeak ${OUTP}.pseudorep2_peaks.narrowPeak --peak-list ${OUTP}.final_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}.idr.log
 IDRCUT=`echo "-l(${IDRTHRES})/l(10)" | bc -l`
-cat ${OUTP}/${BAMID}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}/${BAMID}.peaks 
+cat ${OUTP}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}.peaks 
 
 # estimate noise as #reads outside IDR peaks
-cat ${OUTP}/${BAMID}.peaks | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}/${BAMID}.idrpeaks.bed
-alfred qc -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks.gz ${OUTP}/${BAMID}.final.bam
+cat ${OUTP}.peaks | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}.idrpeaks.bed
+alfred qc -b ${OUTP}.idrpeaks.bed -r ${HG} -o ${OUTP}.idrpeaks.gz ${OUTP}.final.bam
 
 # annotate peaks using homer
 cd ${OUTP}
-annotatePeaks.pl ${BAMID}.peaks hg19 -annStats ${BAMID}.homer.annStats > ${BAMID}.annotated.peaks
+annotatePeaks.pl ${OUTP}.peaks hg19 -annStats ${OUTP}.homer.annStats > ${OUTP}.annotated.peaks
 
 # create tag directory (should we use normGC? only unique, keepOne?)
-makeTagDirectory tagdir -genome ${HG} -checkGC ${BAMID}.final.bam
+makeTagDirectory tagdir -genome ${HG} -checkGC ${OUTP}.final.bam
 Rscript ${RSCR}/clonalTag.R tagdir/tagCountDistribution.txt
 Rscript ${RSCR}/nuclfreq.R tagdir/tagFreq.txt
 Rscript ${RSCR}/nuclfreq.R tagdir/tagFreqUniq.txt
@@ -176,23 +157,23 @@ Rscript ${RSCR}/autocor.R tagdir/tagAutocorrelation.txt
 Rscript ${RSCR}/gc.R tagdir/genomeGCcontent.txt tagdir/tagGCcontent.txt
 
 # Quantify peaks
-annotatePeaks.pl ${BAMID}.peaks hg19 -size given -noann -nogene -d tagdir > ${BAMID}.peaks.normalized
+annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noann -nogene -d tagdir > ${OUTP}.peaks.normalized
 
 # Annotated and normalized peaks
-annotatePeaks.pl ${BAMID}.peaks hg19 -size given -annStats ${BAMID}.homer.annStats -d tagdir > ${BAMID}.annotated.normalized
+annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.homer.annStats -d tagdir > ${OUTP}.annotated.normalized
 
 # create UCSC files
-makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${BAMID}.bedGraph
-echo "track type=narrowPeak visibility=3 db=hg19 name=\"${BAMID}\" description=\"${BAMID} narrowPeaks\"" | gzip -c > ${BAMID}.narrowPeak.ucsc.bed.gz
-echo "browser position chr12:125400362-125403757" | gzip -c >> ${BAMID}.narrowPeak.ucsc.bed.gz
-cat ${BAMID}.peaks | gzip -c >> ${BAMID}.narrowPeak.ucsc.bed.gz
+makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${OUTP}.bedGraph
+echo "track type=narrowPeak visibility=3 db=hg19 name=\"${OUTP}\" description=\"${OUTP} narrowPeaks\"" | gzip -c > ${OUTP}.narrowPeak.ucsc.bed.gz
+echo "browser position chr12:125400362-125403757" | gzip -c >> ${OUTP}.narrowPeak.ucsc.bed.gz
+cat ${OUTP}.peaks | gzip -c >> ${OUTP}.narrowPeak.ucsc.bed.gz
 
 # create IGV files
-${IGVTOOLS} totdf ${BAMID}.bedGraph.gz ${BAMID}.tdf hg19
+${IGVTOOLS} totdf ${OUTP}.bedGraph.gz ${OUTP}.tdf hg19
 
 # TF motif prediction
 mkdir -p motifs
-findMotifsGenome.pl ${BAMID}.peaks hg19 motifs/ -size 50 -mask
+findMotifsGenome.pl ${OUTP}.peaks hg19 motifs/ -size 50 -mask
 
 # Clean-up tmp
 if [ -n "${TMPDIR}" ]

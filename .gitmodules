@@ -1,4 +1,0 @@
-[submodule "src/freebayes"]
-	path = src/freebayes
-	url = https://github.com/ekg/freebayes.git
-	ignore = dirty
