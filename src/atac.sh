@@ -161,9 +161,7 @@ cat ${OUTP}/${BAMID}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}/${BA
 
 # estimate noise as #reads outside IDR peaks
 cat ${OUTP}/${BAMID}.peaks | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}/${BAMID}.idrpeaks.bed
-alfred qc -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks ${OUTP}/${BAMID}.final.bam
-rm ${OUTP}/${BAMID}.idrpeaks.bed ${OUTP}/${OUTP}.idrpeaks.coverage.tsv ${OUTP}/${OUTP}.idrpeaks.bedcov.tsv ${OUTP}/${OUTP}.idrpeaks.isize.tsv
-rm ${OUTP}/${OUTP}.idrpeaks.mapq.tsv ${OUTP}/${OUTP}.idrpeaks.ontarget.tsv ${OUTP}/${OUTP}.idrpeaks.readlength.tsv
+alfred qc -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks.gz ${OUTP}/${BAMID}.final.bam
 
 # annotate peaks using homer
 cd ${OUTP}

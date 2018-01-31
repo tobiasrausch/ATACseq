@@ -64,12 +64,9 @@ samtools merge ${OUTP}/${BAMID}.bam `echo ${CONTROL} | sed 's/#/\/*.final.bam /g
 samtools index ${OUTP}/${BAMID}.bam
 
 # Run stats
-alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.bam
-Rscript ${RSCR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
-MICOL=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
-ISIZE=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
-rm ${OUTP}/${OUTP}.bamStats.coverage.tsv ${OUTP}/${OUTP}.bamStats.bedcov.tsv ${OUTP}/${OUTP}.bamStats.ontarget.tsv
-rm ${OUTP}/${OUTP}.bamStats.mapq.tsv
+alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats.gz ${OUTP}/${BAMID}.bam
+MICOL=`zgrep "^ME" ${OUTP}/${OUTP}.bamStats.tsv.gz | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
+ISIZE=`zgrep "^ME" ${OUTP}/${OUTP}.bamStats.tsv.gz | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
 
 # call peaks
 macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZE} -n ${OUTP}/${BAMID} -t ${OUTP}/${BAMID}.bam
@@ -100,9 +97,7 @@ cat ${OUTP}/${BAMID}.treatment.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${
 
 # estimate noise as #reads outside IDR peaks
 cat ${OUTP}/${BAMID}.treatment.idr ${OUTP}/${BAMID}.control.idr | cut -f 1-3 | sort -k1,1V -k2,2n | uniq | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}/${BAMID}.idrpeaks.bed
-alfred qc -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks ${OUTP}/${BAMID}.bam
-rm ${OUTP}/${OUTP}.idrpeaks.coverage.tsv ${OUTP}/${OUTP}.idrpeaks.bedcov.tsv ${OUTP}/${OUTP}.idrpeaks.isize.tsv
-rm ${OUTP}/${OUTP}.idrpeaks.mapq.tsv ${OUTP}/${OUTP}.idrpeaks.ontarget.tsv ${OUTP}/${OUTP}.idrpeaks.readlength.tsv
+alfred qc -b ${OUTP}/${BAMID}.idrpeaks.bed -r ${HG} -o ${OUTP}/${OUTP}.idrpeaks.gz ${OUTP}/${BAMID}.bam
 
 # subset peaks to IDR-filtered peaks
 bedtools intersect -a ${OUTP}/${BAMID}_peaks.narrowPeak -b ${OUTP}/${BAMID}.idrpeaks.bed | sort -k1,1V -k2,2n | uniq > ${OUTP}/${BAMID}.peaks
