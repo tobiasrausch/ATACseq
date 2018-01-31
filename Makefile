@@ -7,7 +7,7 @@ PBASE=$(shell pwd)
 all:   	$(TARGETS)
 
 .igvtools:
-	cd src/ && wget 'http://data.broadinstitute.org/igv/projects/downloads/igvtools_2.3.91.zip' && unzip igvtools_2.3.91.zip && rm igvtools_2.3.91.zip && cd ../ && touch .igvtools
+	cd src/ && wget 'http://data.broadinstitute.org/igv/projects/downloads/2.3/igvtools_2.3.91.zip' && unzip igvtools_2.3.91.zip && rm igvtools_2.3.91.zip && cd ../ && touch .igvtools
 
 .homer:
 	module load Perl && cd src/homer/ && perl configureHomer.pl -install homer && perl configureHomer.pl -install hg19 && cd ../../ && touch .homer
