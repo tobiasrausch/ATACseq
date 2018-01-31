@@ -121,12 +121,10 @@ rm ${OUTP}/${BAMID}.rep2.bam
 rm ${OUTP}/${BAMID}.rep00 ${OUTP}/${BAMID}.rep01
 
 # Run stats using filtered BAM, TSS enrichment, error rates, etc.
-alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats ${OUTP}/${BAMID}.final.bam
+alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}/${OUTP}.bamStats.tsv.gz ${OUTP}/${BAMID}.final.bam
 Rscript ${RSCR}/isize.R ${OUTP}/${OUTP}.bamStats.isize.tsv
-MICOL=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
-ISIZE=`cat ${OUTP}/${OUTP}.bamStats.metrics.tsv | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
-rm ${OUTP}/${OUTP}.bamStats.coverage.tsv ${OUTP}/${OUTP}.bamStats.bedcov.tsv ${OUTP}/${OUTP}.bamStats.ontarget.tsv
-rm ${OUTP}/${OUTP}.bamStats.mapq.tsv
+MICOL=`zgrep "^ME" ${OUTP}/${OUTP}.bamStats.tsv.gz | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
+ISIZE=`zgrep "^ME" ${OUTP}/${OUTP}.bamStats.tsv.gz | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
 
 # FreeBayes
 ${FREEBAYES} --no-partial-observations --min-repeat-entropy 1 --report-genotype-likelihood-max --min-alternate-fraction 0.15 --fasta-reference ${HG} --genotype-qualities -b ${OUTP}/${BAMID}.final.bam -v ${OUTP}/${BAMID}.vcf
