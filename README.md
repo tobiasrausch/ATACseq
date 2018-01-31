@@ -8,7 +8,7 @@ ATAC-Seq Pipeline Installation
 `make all`
 
 
-Running ATAC-Seq Analysis Pipeline
-----------------------------------
+Running the ATAC-Seq analysis pipeline for a single sample
+----------------------------------------------------------
 
 `./src/atac.sh <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>`
