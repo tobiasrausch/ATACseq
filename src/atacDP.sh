@@ -115,7 +115,7 @@ annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noadj -raw -noann -nogene -d ${
 annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noann -nogene -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.peaks.normalized
 
 # Annotated and normalized peaks
-annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.${DIRID}.homer.annStats -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.annotated.normalized
+annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.homer.annStats -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.annotated.normalized
 
 # get differential peaks
 if [ ${REPLICATES} -eq 1 ]; then
