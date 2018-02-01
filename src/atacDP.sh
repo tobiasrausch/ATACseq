@@ -108,12 +108,6 @@ alfred qc -b ${OUTP}.idrpeaks.bed -r ${HG} -o ${OUTP}.idrpeaks.gz ${OUTP}.bam
 # subset peaks to IDR-filtered peaks
 bedtools intersect -a ${OUTP}_peaks.narrowPeak -b ${OUTP}.idrpeaks.bed | sort -k1,1V -k2,2n | uniq > ${OUTP}.peaks
 
-# quantify peaks (or -len 0 or -mask)
-annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noadj -raw -noann -nogene -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.peaks.quant
-
-# normalized tag counts
-annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noann -nogene -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.peaks.normalized
-
 # Annotated and normalized peaks
 annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.homer.annStats -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.annotated.normalized
 
