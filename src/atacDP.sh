@@ -79,7 +79,7 @@ samtools merge -@ ${THREADS} ${OUTP}.bam ${CB1} ${CB2} ${TB1} ${TB2}
 samtools index -@ ${THREADS} ${OUTP}.bam
 
 # Run stats
-alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}.bamStats.gz ${OUTP}.bam
+alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}.bamStats.tsv.gz ${OUTP}.bam
 MICOL=`zgrep "^ME" ${OUTP}.bamStats.tsv.gz | head -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep "MedianInsertSize" | cut -f 1`
 ISIZE=`zgrep "^ME" ${OUTP}.bamStats.tsv.gz | tail -n 1 | tr '\t' '\n'  | awk '{print NR"\t"$0;}' | grep -P "^${MICOL}\t" | cut -f 2`
 echo "Insert size" ${ISIZE}
