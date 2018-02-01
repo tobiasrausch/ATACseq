@@ -120,8 +120,8 @@ annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.homer.annStats
 # get differential peaks
 if [ ${REPLICATES} -eq 1 ]; then
     # Replicates
-    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -b ${TTAGDIR} ${CTAGDIR} > ${OUTP}.up.differentialpeaks
-    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -b ${CTAGDIR} ${TTAGDIR} > ${OUTP}.down.differentialpeaks
+    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -t ${TTAGDIR} -b ${CTAGDIR} > ${OUTP}.up.differentialpeaks
+    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -t ${CTAGDIR} -b ${TTAGDIR} > ${OUTP}.down.differentialpeaks
 else
     # No replicates
     getDifferentialPeaks ${OUTP}.peaks ${TT1} ${CT1} > ${OUTP}.up.differentialpeaks
