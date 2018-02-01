@@ -1,8 +1,15 @@
 #!/bin/bash
 
-if [ $# -lt 4 ]
+if [ $# -ne 6 ]
 then
-    echo "Usage: $0 <genome.fa> <outprefix> -c <controlrep1_folder> -c <controlrep2_folder> ... -t <treatmentrep1_folder> -t <treatmentrep2_folder> ..."
+    echo "**********************************************************************"
+    echo "ATAC-Seq analysis pipeline."
+    echo "This program comes with ABSOLUTELY NO WARRANTY."
+    echo ""
+    echo "Contact: Tobias Rausch (rausch@embl.de)"
+    echo "**********************************************************************"
+    echo ""
+    echo "Usage: $0 <genome.fa> <outprefix> <control.rep1.final_peaks.narrowPeak> <control.rep2.final_peaks.narrowPeak> <treatment.rep1.final_peaks.narrowPeak> <treatment.rep2.final_peaks.narrowPeak>"
     exit -1
 fi
 
@@ -17,8 +24,45 @@ THREADS=4
 # CMD parameters
 HG=${1}
 OUTP=${2}
-shift
-shift
+CP1=${3}
+CP2=${4}
+TP1=${5}
+TP2=${6}
+CB1=`echo ${CP1} | sed 's/_peaks.narrowPeak/.bam/'`
+CB2=`echo ${CP2} | sed 's/_peaks.narrowPeak/.bam/'`
+TB1=`echo ${TP1} | sed 's/_peaks.narrowPeak/.bam/'`
+TB2=`echo ${TP2} | sed 's/_peaks.narrowPeak/.bam/'`
+CT1=`echo ${CP1} | sed 's/\/\(.*\).pseudorep[12]_peaks.narrowPeak/\/\1\/tagdir\//' | sed 's/\/\(.*\).final_peaks.narrowPeak/\/\1\/tagdir\//'`
+CT2=`echo ${CP2} | sed 's/\/\(.*\).pseudorep[12]_peaks.narrowPeak/\/\1\/tagdir\//' | sed 's/\/\(.*\).final_peaks.narrowPeak/\/\1\/tagdir\//'`
+TT1=`echo ${TP1} | sed 's/\/\(.*\).pseudorep[12]_peaks.narrowPeak/\/\1\/tagdir\//' | sed 's/\/\(.*\).final_peaks.narrowPeak/\/\1\/tagdir\//'`
+TT2=`echo ${TP2} | sed 's/\/\(.*\).pseudorep[12]_peaks.narrowPeak/\/\1\/tagdir\//' | sed 's/\/\(.*\).final_peaks.narrowPeak/\/\1\/tagdir\//'`
+REPLICATES=1
+if [ ${CT1} == ${CT2} ]
+then
+    CTAGDIR=${CT1}
+    REPLICATES=0
+else
+    CTAGDIR="${CT1} ${CT2}"
+fi
+if [ ${TT1} == ${TT2} ]
+then
+    TTAGDIR=${TT1}
+    REPLICATES=0
+else
+    TTAGDIR="${TT1} ${TT2}"
+fi
+
+echo ""
+echo "Input Files and directories"
+echo ""
+ls ${CP1} ${CP2} ${TP1} ${TP2} ${CB1} ${CB2} ${TB1} ${TB2} ${CT1} ${CT2} ${TT1} ${TT2}
+if [ $? -ne 0 ]
+then
+    echo ""
+    echo "One of the input files does not exist!!!"
+    echo ""
+    exit -1
+fi
 
 # Programs
 RSCR=${BASEDIR}/../R
@@ -30,29 +74,9 @@ then
     export TMP=${TMPDIR}
 fi
 
-# Get treatment and control BAMs
-OPTARR=( $@ )
-TYPE="CONTROL"
-CONTROL=""
-TREATMENT=""
-for ((  i = 0 ;  i < ${#OPTARR[@]};  i++  ))
-do
-    if [ ${OPTARR[$i]} == "-c" ] ; then
-	TYPE="CONTROL"
-    elif [ ${OPTARR[$i]} == "-t" ] ; then
-	TYPE="TREATMENT"
-    else
-	if [ ${TYPE} == "CONTROL" ] ; then
-	    CONTROL=${CONTROL}" "`echo ${OPTARR[$i]} | sed 's/$/#/'`
-	else
-	    TREATMENT=${TREATMENT}" "`echo ${OPTARR[$i]} | sed 's/$/#/'`
-	fi
-    fi
-done
-
 # Merge filtered BAMs
-samtools merge ${OUTP}.bam `echo ${CONTROL} | sed 's/#/\/*.final.bam /g'` `echo ${TREATMENT} | sed 's/#/\/*.final.bam /g'`
-samtools index ${OUTP}.bam
+samtools merge -@ ${THREADS} ${OUTP}.bam ${CB1} ${CB2} ${TB1} ${TB2}
+samtools index -@ ${THREADS} ${OUTP}.bam
 
 # Run stats
 alfred qc -b ${BASEDIR}/../bed/tss.bed -r ${HG} -o ${OUTP}.bamStats.gz ${OUTP}.bam
@@ -67,20 +91,10 @@ macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZ
 unset PYTHONPATH
 export PATH=${PY3}:${PATH}
 IDRTHRES=0.1
-if [ `echo ${CONTROL} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 ] ; then
-    IDRCONTROLSAMPLES=`echo ${CONTROL} | sed 's/#/\/*.pseudorep1_peaks.narrowPeak /'`" "`echo ${CONTROL} | sed 's/#/\/*.pseudorep2_peaks.narrowPeak /'`
-else
-    IDRCONTROLSAMPLES=`echo ${CONTROL} | sed 's/#/\/*.final_peaks.narrowPeak /g'`
-fi
-if [ `echo ${TREATMENT} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 ] ; then
-    IDRTREATSAMPLES=`echo ${TREATMENT} | sed 's/#/\/*.pseudorep1_peaks.narrowPeak /'`" "`echo ${TREATMENT} | sed 's/#/\/*.pseudorep2_peaks.narrowPeak /'`
-else
-    IDRTREATSAMPLES=`echo ${TREATMENT} | sed 's/#/\/*.final_peaks.narrowPeak /g'`
-fi
-idr --samples ${IDRCONTROLSAMPLES} --peak-list ${OUTP}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}.control.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}.control.idr.log
-echo "Samples " ${IDRCONTROLSAMPLES} >> ${OUTP}.control.idr.log
-idr --samples ${IDRTREATSAMPLES} --peak-list ${OUTP}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}.treatment.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}.treatment.idr.log
-echo "Samples " ${IDRTREATSAMPLES} >> ${OUTP}.treatment.idr.log
+idr --samples ${CP1} ${CP2} --peak-list ${OUTP}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}.control.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}.control.idr.log
+echo "Samples " ${CP1} ${CP2} >> ${OUTP}.control.idr.log
+idr --samples ${TP1} ${TP2} --peak-list ${OUTP}_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}.treatment.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}.treatment.idr.log
+echo "Samples " ${TP1} ${TP2} >> ${OUTP}.treatment.idr.log
 
 # filter peaks based on IDR
 IDRCUT=`echo "-l(${IDRTHRES})/l(10)" | bc -l`
@@ -95,30 +109,30 @@ alfred qc -b ${OUTP}.idrpeaks.bed -r ${HG} -o ${OUTP}.idrpeaks.gz ${OUTP}.bam
 bedtools intersect -a ${OUTP}_peaks.narrowPeak -b ${OUTP}.idrpeaks.bed | sort -k1,1V -k2,2n | uniq > ${OUTP}.peaks
 
 # quantify peaks (or -len 0 or -mask)
-annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noadj -raw -noann -nogene -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}.peaks.quant
+annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noadj -raw -noann -nogene -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.peaks.quant
 
 # normalized tag counts
-annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noann -nogene -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}.peaks.normalized
+annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noann -nogene -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.peaks.normalized
 
 # Annotated and normalized peaks
-annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.${DIRID}.homer.annStats -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}.annotated.normalized
+annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.${DIRID}.homer.annStats -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.annotated.normalized
 
 # get differential peaks
-if [ \( `echo ${CONTROL} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 \) -o \( `echo ${TREATMENT} | tr '#' '\n' | grep "." | wc -l | cut -f 1` -eq 1 \) ] ; then
-    # No replicates
-    getDifferentialPeaks ${OUTP}.peaks `echo ${TREATMENT} | sed 's/#.*$/\/tagdir\/ /'` `echo ${CONTROL} | sed 's/#.*$/\/tagdir\/ /'` > ${OUTP}.up.differentialpeaks
-    getDifferentialPeaks ${OUTP}.peaks `echo ${CONTROL} | sed 's/#.*$/\/tagdir\/ /'` `echo ${TREATMENT} | sed 's/#.*$/\/tagdir\/ /'` > ${OUTP}.down.differentialpeaks
-else
+if [ ${REPLICATES} -eq 1 ]; then
     # Replicates
-    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -b `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` -t `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}.up.differentialpeaks
-    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -b `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` -t `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}.down.differentialpeaks
+    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -b ${TTAGDIR} ${CTAGDIR} > ${OUTP}.up.differentialpeaks
+    getDifferentialPeaksReplicates.pl -p ${OUTP}.peaks -genome hg19 -DESeq2 -b ${CTAGDIR} ${TTAGDIR} > ${OUTP}.down.differentialpeaks
+else
+    # No replicates
+    getDifferentialPeaks ${OUTP}.peaks ${TT1} ${CT1} > ${OUTP}.up.differentialpeaks
+    getDifferentialPeaks ${OUTP}.peaks ${CT1} ${TT1} > ${OUTP}.down.differentialpeaks
 fi
 
 # Annotate differential peaks
 for DIRID in up down
 do
     cut -f 1-4 ${OUTP}.${DIRID}.differentialpeaks | grep -v "^#" | sort -k2,2V -k3,3n | awk '{print $2"\t"$3"\t"$4"\t"$1;}' > ${OUTP}.${DIRID}.peaks
-    annotatePeaks.pl ${OUTP}.${DIRID}.peaks hg19 -size given -annStats ${OUTP}.${DIRID}.homer.annStats -go ${OUTP}/go${DIRID} -d `echo ${CONTROL} | sed 's/#/\/tagdir\/ /g'` `echo ${TREATMENT} | sed 's/#/\/tagdir\/ /g'` > ${OUTP}.${DIRID}.annotated.normalized.peaks
+    annotatePeaks.pl ${OUTP}.${DIRID}.peaks hg19 -size given -annStats ${OUTP}.${DIRID}.homer.annStats -go ${OUTP}/go${DIRID} -d ${CTAGDIR} ${TTAGDIR} > ${OUTP}.${DIRID}.annotated.normalized.peaks
     mkdir -p ${OUTP}/motifs${DIRID}
     findMotifsGenome.pl ${OUTP}.${DIRID}.peaks hg19 ${OUTP}/motifs${DIRID}/ -size 50 -mask
 done

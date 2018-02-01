@@ -132,6 +132,7 @@ do
     # filter peaks
     bedtools intersect -v -a ${PEAKN}_peaks.narrowPeak -b <(zcat ${BASEDIR}/../bed/wgEncodeDacMapabilityConsensusExcludable.bed.gz) | sort -k1,1V -k2,2n | uniq > ${PEAKN}_peaks.narrowPeak.tmp && mv ${PEAKN}_peaks.narrowPeak.tmp ${PEAKN}_peaks.narrowPeak
 done
+rm -f ${OUTP}.pseudorep2_peaks.xls ${OUTP}.pseudorep2_summits.bed ${OUTP}.pseudorep1_peaks.xls ${OUTP}.pseudorep1_summits.bed ${OUTP}.final_peaks.xls ${OUTP}.final_summits.bed
 
 # filter peaks based on IDR
 unset PYTHONPATH
