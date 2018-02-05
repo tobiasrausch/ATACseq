@@ -164,12 +164,13 @@ annotatePeaks.pl ${OUTP}.peaks hg19 -size given -noann -nogene -d ${OUTP}/tagdir
 annotatePeaks.pl ${OUTP}.peaks hg19 -size given -annStats ${OUTP}.homer.annStats -d ${OUTP}/tagdir > ${OUTP}.annotated.normalized
 
 # create UCSC files
-makeUCSCfile tagdir -style dnase -fsize 5e7 -o ${OUTP}.bedGraph
+makeUCSCfile ${OUTP}/tagdir -style dnase -fsize 5e7 -o ${OUTP}.bedGraph
 echo "track type=narrowPeak visibility=3 db=hg19 name=\"${OUTP}\" description=\"${OUTP} narrowPeaks\"" | gzip -c > ${OUTP}.narrowPeak.ucsc.bed.gz
 echo "browser position chr12:125400362-125403757" | gzip -c >> ${OUTP}.narrowPeak.ucsc.bed.gz
 cat ${OUTP}.peaks | gzip -c >> ${OUTP}.narrowPeak.ucsc.bed.gz
 
 # create IGV files
+module load Java
 ${IGVTOOLS} totdf ${OUTP}.bedGraph.gz ${OUTP}.tdf hg19
 
 # TF motif prediction
