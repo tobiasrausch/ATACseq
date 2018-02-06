@@ -146,9 +146,6 @@ cat ${OUTP}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-10 > ${OUTP}.peaks
 cat ${OUTP}.peaks | awk '{print $1"\t"$2"\t"$3"\tPeak"NR;}' > ${OUTP}.idrpeaks.bed
 alfred qc -b ${OUTP}.idrpeaks.bed -r ${HG} -o ${OUTP}.idrpeaks.gz ${OUTP}.final.bam
 
-# annotate peaks using homer
-annotatePeaks.pl ${OUTP}.peaks hg19 -annStats ${OUTP}.homer.annStats > ${OUTP}.annotated.peaks
-
 # create tag directory (should we use normGC? only unique, keepOne?)
 makeTagDirectory ${OUTP}/tagdir -genome ${HG} -checkGC ${OUTP}.final.bam
 Rscript ${RSCR}/clonalTag.R ${OUTP}/tagdir/tagCountDistribution.txt
