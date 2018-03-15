@@ -4,6 +4,7 @@ atac.slurm_submit.sh
 .envs
 .homer
 bin/
+bed/
 
 # Compiled Object files
 *.slo

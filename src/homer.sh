@@ -22,13 +22,13 @@ HG=${3}
 OUTP=${4}
 
 # create tag directory (should we use normGC? only unique, keepOne?)
-makeTagDirectory ${OUTP}/tagdir -genome ${HG} -checkGC ${ALIGN}
+makeTagDirectory ${OUTP}/tagdir -genome ${HG} -checkGC ${ALIGN} | gzip -c > ${OUTP}.homer.log.gz
 
 # Annotated and normalized peaks
-annotatePeaks.pl ${PEAKS} hg19 -size given -annStats ${OUTP}.homer.annStats -d ${OUTP}/tagdir > ${OUTP}.annotated.normalized
+annotatePeaks.pl ${PEAKS} hg19 -size given -annStats ${OUTP}.homer.annStats -d ${OUTP}/tagdir > ${OUTP}.annotated.normalized | gzip -c >> ${OUTP}.homer.log.gz
 
 # create UCSC files
-makeUCSCfile ${OUTP}/tagdir -style dnase -fsize 5e7 -o ${OUTP}.bedGraph
+makeUCSCfile ${OUTP}/tagdir -style dnase -fsize 5e7 -o ${OUTP}.bedGraph | gzip -c >> ${OUTP}.homer.log.gz
 
 # create IGV files
 igvtools totdf ${OUTP}.bedGraph.gz ${OUTP}.tdf hg19
