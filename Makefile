@@ -1,20 +1,22 @@
 SHELL := /bin/bash
 
 # Targets
-TARGETS = .homer .idr .igvtools
+TARGETS = .conda .channels .envs .homer
 PBASE=$(shell pwd)
 
 all:   	$(TARGETS)
 
-.igvtools:
-	cd src/ && wget 'http://data.broadinstitute.org/igv/projects/downloads/2.3/igvtools_2.3.91.zip' && unzip igvtools_2.3.91.zip && rm igvtools_2.3.91.zip && cd ../ && touch .igvtools
+.conda:
+	wget 'https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh' && bash Miniconda3-latest-Linux-x86_64.sh -b -p ${PBASE}/bin && rm -f Miniconda3-latest-Linux-x86_64.sh && touch .conda
 
-.homer:
-	module load Perl && cd src/homer/ && perl configureHomer.pl -install homer && perl configureHomer.pl -install hg19 && cd ../../ && touch .homer
+.channels: .conda
+	export PATH=${PBASE}/bin/bin:${PATH} && conda config --add channels defaults && conda config --add channels conda-forge && conda config --add channels bioconda && touch .channels
 
-.idr:
-	wget 'https://repo.continuum.io/archive/Anaconda3-4.3.0-Linux-x86_64.sh' && bash Anaconda3-4.3.0-Linux-x86_64.sh -b -p ${PBASE}/src/python3/ && rm Anaconda3-4.3.0-Linux-x86_64.sh && unset PYTHONPATH && source ${PBASE}/src/python3/bin/activate && cd src/ && wget 'https://github.com/nboley/idr/archive/2.0.3.zip' && unzip 2.0.3.zip && rm 2.0.3.zip && cd idr-2.0.3/ && python setup.py install && source deactivate && cd ../../ && touch .idr
+.envs: .conda .channels
+	export PATH=${PBASE}/bin/bin:${PATH} && conda create -y --prefix=${PBASE}/bin/envs/atac samtools=1.7 igvtools=2.3.93 alfred=0.1.5 idr=2.0.3 cutadapt=1.16 fastqc=0.11.7 bcftools=1.7 bowtie2=2.3.4.1 bbmap=37.90 biobambam=2.0.87 && conda install -y --prefix=${PBASE}/bin/envs/atac -c conda-forge ncurses=5.9 && conda create -y --prefix=${PBASE}/bin/envs/atac2 macs2=2.1.1.20160309 homer=4.9.1 igvtools=2.3.93 samtools=1.7 && touch .envs
+
+.homer: .conda .channels .envs
+	export PATH=${PBASE}/bin/bin:${PATH} && source activate ${PBASE}/bin/envs/atac2 && perl ${PBASE}/bin/envs/atac2/share/homer-4.9.1-5/configureHomer.pl -install hg19 && source deactivate && touch .homer
 
 clean:
-	mv src/homer/configureHomer.pl . && rm -rf src/homer/ && mkdir -p src/homer/ && mv configureHomer.pl src/homer/
-	rm -rf $(TARGETS) $(TARGETS:=.o) src/python3/ src/idr-2.0.3/ src/IGVTools/
+	rm -rf $(TARGETS) $(TARGETS:=.o) bin/

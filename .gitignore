@@ -1,11 +1,9 @@
 atac.slurm_submit.sh
-.idr
+.channels
+.conda
+.envs
 .homer
-.igvtools
-src/homer
-src/idr-2.0.3
-src/python3
-src/IGVTools/
+bin/
 
 # Compiled Object files
 *.slo
