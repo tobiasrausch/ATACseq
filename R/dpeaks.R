@@ -19,7 +19,7 @@ print(dds)
 
 # Variance stabilizing transformation
 vsd = vst(dds, blind=F)
-#meanSdPlot(assay(vsd), ranks=F)
+meanSdPlot(assay(vsd), ranks=F)
 
 # Sample heatmap
 sampleDists = dist(t(assay(vsd)))
