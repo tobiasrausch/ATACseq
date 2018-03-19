@@ -31,4 +31,11 @@ Merge peaks across samples and create a raw count matrix.
 
 `./src/count.sh peaks.lst bams.lst <output prefix>`
 
-Call differential peaks on that count matrix using DESeq2.
+To call differential peaks on a count matrix, called counts.gz, using DESeq2 we first need to create a file with sample level information (sample.info). For instance, if you have 2 replicates per condition:
+
+`echo -e "name\tcondition" > sample.info`
+
+`zcat counts.gz | head -n 1 | cut -f 5- | tr '\t' '\n' | sed 's/.final$//' | awk '{print $0"\t"int((NR-1)/2);}' >> sample.info`
+
+`Rscript R/dpeaks.R counts.gz sample.info`
+
