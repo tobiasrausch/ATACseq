@@ -30,10 +30,16 @@ OUTP=${5}
 FQ1ID=`echo ${OUTP} | sed 's/$/.fq1/'`
 FQ2ID=`echo ${OUTP} | sed 's/$/.fq2/'`
 
+# Fastqc
+mkdir -p ${OUTP}_prefastqc/ && fastqc -t ${THREADS} -o ${OUTP}_prefastqc/ ${FQ1} && fastqc -t ${THREADS} -o ${OUTP}_prefastqc/ ${FQ2}
+
 # Adapter trimming
 cutadapt -q 10 -m 15 -e 0.10 -a CTGTCTCTTATA -A CTGTCTCTTATA -o ${OUTP}.1.fq -p ${OUTP}.2.fq ${FQ1} ${FQ2} | gzip -c > ${OUTP}.cutadapt.log.gz
 gzip ${OUTP}.1.fq
 gzip ${OUTP}.2.fq
+
+# Fastqc
+mkdir -p ${OUTP}_postfastqc/ && fastqc -t ${THREADS} -o ${OUTP}_postfastqc/ ${OUTP}.1.fq.gz && fastqc -t ${THREADS} -o ${OUTP}_postfastqc/ ${OUTP}.2.fq.gz
 
 # Bowtie
 #bowtie2 --threads ${THREADS} --very-sensitive --maxins 2000  --no-discordant --no-mixed -x ${HG} -1 ${OUTP}.1.fq.gz -2 ${OUTP}.2.fq.gz
