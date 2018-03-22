@@ -46,7 +46,6 @@ mv ${OP}.clustered.peaks.gz.tmp ${OP}.clustered.peaks.gz
 echo "Post-clustered peak width" `zcat ${OP}.clustered.peaks.gz | awk '{SUM+=($3-$2);} END {print SUM/NR;}'`
 
 # Count fragments in peaks
-gunzip ${OP}.clustered.peaks.gz
 for B in `cat ${BFLST}`
 do
     if [ ! -f ${B} ]
@@ -54,13 +53,11 @@ do
 	echo "BAM file does not exist:" ${B}
 	exit -1
     else
-	# ToDo: Support gzipped files
-	alfred count_dna -o ${OP}.count.gz -i ${OP}.clustered.peaks ${B}
+	alfred count_dna -o ${OP}.count.gz -i ${OP}.clustered.peaks.gz ${B}
 	SID=`zcat ${OP}.count.gz | head -n 1 | cut -f 5`
 	mv ${OP}.count.gz ${OP}.${SID}.count.gz
     fi
 done
-gzip ${OP}.clustered.peaks
 rm ${OP}.clustered.peaks.gz
 
 # Create count matrix

@@ -72,8 +72,8 @@ rm ${OUTP}.rmdup.bam ${OUTP}.rmdup.bam.bai
 alfred qc -b ${BASEDIR}/../bed/hg19.promoter.bed.gz -r ${HG} -o ${OUTP}.bamStats.filtered.tsv.gz ${OUTP}.final.bam
 
 # Create browser tracks (ToDo)
-#alfred tracks -o ${OUTP}.bedGraph.gz ${OUTP}.final.bam
-#igvtools totdf ${OUTP}.bedGraph.gz ${OUTP}.tdf ${ATYPE}
+alfred tracks -o ${OUTP}.bedGraph.gz ${OUTP}.final.bam
+igvtools totdf ${OUTP}.bedGraph.gz ${OUTP}.tdf ${ATYPE}
 
 # Deactivate environment
 source deactivate
