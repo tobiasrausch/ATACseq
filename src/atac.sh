@@ -6,7 +6,7 @@ then
     echo "ATAC-Seq analysis pipeline."
     echo "This program comes with ABSOLUTELY NO WARRANTY."
     echo ""
-    echo "Version: 0.0.8"
+    echo "Version: 0.0.9"
     echo "Contact: Tobias Rausch (rausch@embl.de)"
     echo "**********************************************************************"
     echo ""
