@@ -2,7 +2,7 @@ library(GenomicFeatures)
 
 promoterTable = function(id) {
 	  db = makeTxDbFromUCSC(genome=id, tablename="ccdsGene")
-	  pr = reduce(promoters(db, upstream=1000, downstream=100), ignore.strand=T)
+	  pr = reduce(promoters(db, upstream=1000, downstream=1000), ignore.strand=T)
 	  pr = keepStandardChromosomes(pr)
 	  pr = pr[width(pr)>1,]
 	  
