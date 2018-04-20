@@ -34,5 +34,8 @@ ${BASEDIR}/pseudorep.sh ${OUTP}.final.bam ${OUTP}
 # Call peaks and filter using IDR (replace pseudo-replicates with true biological replicates if available)
 ${BASEDIR}/peaks.sh ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam ${HG} ${OUTP}
 
+# Delete pseudo-replicates
+rm ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep1.bam.bai ${OUTP}.pseudorep2.bam ${OUTP}.pseudorep2.bam.bai
+
 # Annotate peaks
 ${BASEDIR}/homer.sh ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}

@@ -44,6 +44,7 @@ source deactivate
 source activate ${BASEDIR}/../bin/envs/atac
 
 # Saturated Peak Detection, significant peaks log2>=3 and -log10(p)>=3
+PKTOTAL=`cat ${OUTP}.merge.bam.suf_peaks.narrowPeak | cut -f 1-3 | sort | uniq | wc -l | cut -f 1`
 cat ${OUTP}.merge.bam.suf_peaks.narrowPeak | awk 'log($7)/log(2)>=2 && $8>=3' | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}.significant.peaks
 cat ${REP1}.suf_peaks.narrowPeak | awk 'log($7)/log(2)>=1 && $8>=2' | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}.lenient.rep1.peaks
 cat ${REP2}.suf_peaks.narrowPeak | awk 'log($7)/log(2)>=1 && $8>=2' | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}.lenient.rep2.peaks
@@ -52,8 +53,6 @@ RECALLREP2=`bedtools intersect -a ${OUTP}.significant.peaks -b ${OUTP}.lenient.r
 SIGTOTAL=`cat ${OUTP}.significant.peaks | cut -f 1-3 | sort | uniq | wc -l | cut -f 1`
 FRACREP1=`echo "${RECALLREP1} / ${SIGTOTAL}" | bc -l`
 FRACREP2=`echo "${RECALLREP2} / ${SIGTOTAL}" | bc -l`
-echo -e "sigpeaks\trep1\trep2\trecallRep1\trecallRep2" > ${OUTP}.peaks.log
-echo -e "${SIGTOTAL}\t${RECALLREP1}\t${RECALLREP2}\t${FRACREP1}\t${FRACREP2}" >> ${OUTP}.peaks.log
 rm ${OUTP}.significant.peaks ${OUTP}.lenient.rep1.peaks ${OUTP}.lenient.rep2.peaks
 
 # filter peaks based on IDR
@@ -61,14 +60,23 @@ IDRTHRES=0.1
 idr --samples ${REP1}.suf_peaks.narrowPeak ${REP2}.suf_peaks.narrowPeak --peak-list ${OUTP}.merge.bam.suf_peaks.narrowPeak --input-file-type narrowPeak --rank p.value --output-file ${OUTP}.idr --soft-idr-threshold ${IDRTHRES} --plot --use-best-multisummit-IDR --log-output-file ${OUTP}.idr.log
 IDRCUT=`echo "-l(${IDRTHRES})/l(10)" | bc -l`
 cat ${OUTP}.merge.bam.suf_peaks.narrowPeak | grep -w -Ff <(cat ${OUTP}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-3) > ${OUTP}.peaks 
-rm ${REP1}.suf_peaks.narrowPeak ${REP2}.suf_peaks.narrowPeak ${OUTP}.merge.bam.suf_peaks.narrowPeak
+rm ${REP1}.suf_peaks.narrowPeak ${REP2}.suf_peaks.narrowPeak
 mv ${OUTP}.merge.bam.suf_peaks.narrowPeak ${OUTP}.unfiltered.peaks
 gzip ${OUTP}.unfiltered.peaks
 gzip ${OUTP}.idr
 
 # Fraction of reads in unfiltered peaks
 alfred qc -b ${OUTP}.unfiltered.peaks.gz -r ${HG} -o ${OUTP}.bamStats.peaks.tsv.gz ${OUTP}.merge.bam
-rm ${OUTP}.merge.bam ${OUTP}.merge.bam.bai
+COL=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | tr '\t' '\n' | grep -n -w "#AlignedBases" | cut -f 1 -d ':'`
+TOTALBP=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | cut -f ${COL} | tail -n 1`
+COL=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | tr '\t' '\n' | grep -n -w "#AlignedBasesInBed" | cut -f 1 -d ':'`
+TOTALBE=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | cut -f ${COL} | tail -n 1`
+FRACPEAK=`echo "${TOTALBE} / ${TOTALBP}" | bc -l`
+rm ${OUTP}.merge.bam ${OUTP}.merge.bam.bai ${OUTP}.bamStats.peaks.tsv.gz
+
+# Summarize peak statistics
+echo -e "totpeaks\tfrip\tsigpeaks\trep1\trep2\trecallRep1\trecallRep2" > ${OUTP}.peaks.log
+echo -e "${PKTOTAL}\t${FRACPEAK}\t${SIGTOTAL}\t${RECALLREP1}\t${RECALLREP2}\t${FRACREP1}\t${FRACREP2}" >> ${OUTP}.peaks.log
 
 # Create UCSC track
 echo "track type=narrowPeak visibility=3 db=hg19 name=\"${OUTP}\" description=\"${OUTP} narrowPeaks\"" | gzip -c > ${OUTP}.narrowPeak.ucsc.bed.gz
