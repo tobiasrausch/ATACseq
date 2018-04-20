@@ -68,8 +68,8 @@ samtools view -@ ${THREADS} -F 1804 -f 2 -q ${QUAL} -b ${OUTP}.rmdup.bam ${CHRS}
 samtools index -@ ${THREADS} ${OUTP}.final.bam
 rm ${OUTP}.rmdup.bam ${OUTP}.rmdup.bam.bai
 
-# Run stats using filtered BAM
-alfred qc -b ${BASEDIR}/../bed/hg19.promoter.bed.gz -r ${HG} -o ${OUTP}.bamStats.filtered.tsv.gz ${OUTP}.final.bam
+# Run stats using filtered BAM using promoter regions
+alfred qc -b ${BASEDIR}/../bed/hg19.promoter.bed.gz -r ${HG} -o ${OUTP}.bamStats.promoters.tsv.gz ${OUTP}.final.bam
 
 # Create browser tracks (ToDo)
 alfred tracks -o ${OUTP}.bedGraph.gz ${OUTP}.final.bam

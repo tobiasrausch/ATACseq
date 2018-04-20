@@ -6,7 +6,7 @@ then
     echo "ATAC-Seq analysis pipeline."
     echo "This program comes with ABSOLUTELY NO WARRANTY."
     echo ""
-    echo "Version: 0.0.9"
+    echo "Version: 0.1.0"
     echo "Contact: Tobias Rausch (rausch@embl.de)"
     echo "**********************************************************************"
     echo ""
@@ -32,7 +32,7 @@ ${BASEDIR}/align.sh ${ATYPE} ${FQ1} ${FQ2} ${HG} ${OUTP}
 ${BASEDIR}/pseudorep.sh ${OUTP}.final.bam ${OUTP}
 
 # Call peaks and filter using IDR (replace pseudo-replicates with true biological replicates if available)
-${BASEDIR}/peaks.sh ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam ${OUTP}
+${BASEDIR}/peaks.sh ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam ${HG} ${OUTP}
 
 # Annotate peaks
 ${BASEDIR}/homer.sh ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
     echo ""
-    echo "Usage: $0 <replicate1.bam> <replicate2.bam> <output prefix>"
+    echo "Usage: $0 <replicate1.bam> <replicate2.bam> <genome.fa> <output prefix>"
     echo ""
     exit -1
 fi
@@ -21,7 +21,8 @@ THREADS=4
 # CMD parameters
 REP1=${1}
 REP2=${2}
-OUTP=${3}
+HG=${3}
+OUTP=${4}
 
 # Merge BAMs
 samtools merge -@ ${THREADS} ${OUTP}.merge.bam ${REP1} ${REP2}
@@ -39,9 +40,21 @@ do
     macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZE} -n ${PEAKN} -t ${PEAKBAM}
     rm ${PEAKN}_summits.bed ${PEAKN}_peaks.xls
 done
-rm ${OUTP}.merge.bam ${OUTP}.merge.bam.bai
 source deactivate
 source activate ${BASEDIR}/../bin/envs/atac
+
+# Saturated Peak Detection, significant peaks log2>=3 and -log10(p)>=3
+cat ${OUTP}.merge.bam.suf_peaks.narrowPeak | awk 'log($7)/log(2)>=2 && $8>=3' | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}.significant.peaks
+cat ${REP1}.suf_peaks.narrowPeak | awk 'log($7)/log(2)>=1 && $8>=2' | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}.lenient.rep1.peaks
+cat ${REP2}.suf_peaks.narrowPeak | awk 'log($7)/log(2)>=1 && $8>=2' | cut -f 1-3 | sort -k1,1V -k2,2n | uniq > ${OUTP}.lenient.rep2.peaks
+RECALLREP1=`bedtools intersect -a ${OUTP}.significant.peaks -b ${OUTP}.lenient.rep1.peaks -wao | awk '$4!="."' | cut -f 1-3 | sort | uniq | wc -l | cut -f 1`
+RECALLREP2=`bedtools intersect -a ${OUTP}.significant.peaks -b ${OUTP}.lenient.rep2.peaks -wao | awk '$4!="."' | cut -f 1-3 | sort | uniq | wc -l | cut -f 1`
+SIGTOTAL=`cat ${OUTP}.significant.peaks | cut -f 1-3 | sort | uniq | wc -l | cut -f 1`
+FRACREP1=`echo "${RECALLREP1} / ${SIGTOTAL}" | bc -l`
+FRACREP2=`echo "${RECALLREP2} / ${SIGTOTAL}" | bc -l`
+echo -e "sigpeaks\trep1\trep2\trecallRep1\trecallRep2" > ${OUTP}.peaks.log
+echo -e "${SIGTOTAL}\t${RECALLREP1}\t${RECALLREP2}\t${FRACREP1}\t${FRACREP2}" >> ${OUTP}.peaks.log
+rm ${OUTP}.significant.peaks ${OUTP}.lenient.rep1.peaks ${OUTP}.lenient.rep2.peaks
 
 # filter peaks based on IDR
 IDRTHRES=0.1
@@ -49,7 +62,13 @@ idr --samples ${REP1}.suf_peaks.narrowPeak ${REP2}.suf_peaks.narrowPeak --peak-l
 IDRCUT=`echo "-l(${IDRTHRES})/l(10)" | bc -l`
 cat ${OUTP}.merge.bam.suf_peaks.narrowPeak | grep -w -Ff <(cat ${OUTP}.idr | awk '$12>='"${IDRCUT}"'' | cut -f 1-3) > ${OUTP}.peaks 
 rm ${REP1}.suf_peaks.narrowPeak ${REP2}.suf_peaks.narrowPeak ${OUTP}.merge.bam.suf_peaks.narrowPeak
+mv ${OUTP}.merge.bam.suf_peaks.narrowPeak ${OUTP}.unfiltered.peaks
+gzip ${OUTP}.unfiltered.peaks
 gzip ${OUTP}.idr
+
+# Fraction of reads in unfiltered peaks
+alfred qc -b ${OUTP}.unfiltered.peaks.gz -r ${HG} -o ${OUTP}.bamStats.peaks.tsv.gz ${OUTP}.merge.bam
+rm ${OUTP}.merge.bam ${OUTP}.merge.bam.bai
 
 # Create UCSC track
 echo "track type=narrowPeak visibility=3 db=hg19 name=\"${OUTP}\" description=\"${OUTP} narrowPeaks\"" | gzip -c > ${OUTP}.narrowPeak.ucsc.bed.gz
