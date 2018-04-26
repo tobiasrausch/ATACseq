@@ -55,4 +55,5 @@ then
 	    fi
 	done < fastq.list
     fi
+    rm fastq.list
 fi
