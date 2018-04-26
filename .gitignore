@@ -5,6 +5,7 @@ atac.slurm_submit.sh
 .homer
 bin/
 bed/
+example/
 
 # Compiled Object files
 *.slo
