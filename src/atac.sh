@@ -6,7 +6,7 @@ then
     echo "ATAC-Seq analysis pipeline."
     echo "This program comes with ABSOLUTELY NO WARRANTY."
     echo ""
-    echo "Version: 0.1.0"
+    echo "Version: 0.1.1"
     echo "Contact: Tobias Rausch (rausch@embl.de)"
     echo "**********************************************************************"
     echo ""
@@ -39,3 +39,6 @@ rm ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep1.bam.bai ${OUTP}.pseudorep2.bam ${OU
 
 # Annotate peaks
 ${BASEDIR}/homer.sh ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}
+
+# Aggregate key QC metrics
+${BASEDIR}/qc_globber.sh ${OUTP}
