@@ -93,5 +93,13 @@ if args.prefix:
             qc['FractionChrM'] = str(float(chrM)/float(total))
 
 # Output summary QC information
-print('\t'.join(qc.keys()))
-print('\t'.join(qc.values()))
+cols = sorted(qc.keys())
+print('\t'.join(cols))
+first = True
+for c in cols:
+    if first:
+        first = False
+    else:
+        print("\t", end="")
+    print(qc[c], end="")
+print()
