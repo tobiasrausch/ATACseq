@@ -3,7 +3,8 @@ library(vsn)
 library(pheatmap)
 library(RColorBrewer)
 library(ggplot2)
-		
+library(genefilter)
+
 # Load count matrix and sample info
 args=commandArgs(trailingOnly=TRUE)
 x = read.table(args[1], header=T)
