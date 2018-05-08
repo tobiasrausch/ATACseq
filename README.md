@@ -20,6 +20,20 @@ Running the ATAC-Seq analysis pipeline for a single sample
 `./src/atac.sh <hg19|mm10> <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>`
 
 
+Plotting the key ATAC-Seq Quality Control metrics
+-------------------------------------------------
+
+If you have multiple output folders (one for each ATAC-Seq sample) you can simply concatenate the QC metrics of each sample.
+
+`head -n 1 ./*/*.key.metrics | grep "TssEnrichment" | uniq > summary.tsv`
+
+`cat ./*/*.key.metrics | grep -v "TssEnrichment" >> summary.tsv`
+
+To plot the distribution for all QC parameters.
+
+`Rscript R/metrics.R summary.tsv`
+
+
 Differential peak calling
 -------------------------
 
