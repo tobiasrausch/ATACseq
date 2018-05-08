@@ -23,17 +23,31 @@ for (col in colnames) {
  ggsave(paste0(col, ".density.png"))
 }
 
+# Correlation plot
+for (s in x$Study) {
+ df = x[x$Study==s,]
+ df = df[, !(names(df) %in% c("Sample","Study"))]
+
+ # Cor-Plot 
+ cr = cor(df)
+ png(paste0(s, ".png"))
+ corrplot(cr, type="upper", order="hclust")
+ dev.off()
+}
 quit()
 
-
-
-df = x[x$Study=="Public",]
-df = df[, !(names(df) %in% c("Sample","Study"))]
-
-# Cor-Plot 
-cr = cor(df)
-corrplot(cr, type="upper", order="hclust")
-
-# Correlation Chart
-df = df[, !(names(df) %in% c("BpCov1ToCov2Ratio","BpCov1ToCovNRatio","DuplicateFraction","ErrorRate","FRiP","FilteredPeaks","FractionChrM","FractionPeaksRetained","MappedSameChrFraction","PeakSaturation","SDCoverage","Sample","UnfilteredPeaks","UnmappedFraction","Study"))]
-chart.Correlation(df)
+# Correlation between any 2 QC metrics
+for (s in x$Study) {
+ df = x[x$Study==s,]
+ for(c1 in colnames) {
+   for(c2 in colnames) {
+     if (c1 != c2) {
+      dfsub = df[,names(df) %in% c(c1, c2)]
+      png(paste0(s, ".", c1, ".", c2, ".png"))
+      chart.Correlation(dfsub)
+      dev.off()
+    }
+   }
+ }
+}
+    
