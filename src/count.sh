@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ $# -ne 3 ]
+if [ $# -ne 4 ]
 then
     echo ""
-    echo "Usage: $0 <peak.file.lst> <bam.file.lst> <output prefix>"
+    echo "Usage: $0 <hg19|mm10> <peak.file.lst> <bam.file.lst> <output prefix>"
     echo ""
     exit -1
 fi
@@ -16,9 +16,10 @@ export PATH=${BASEDIR}/../bin/bin:${PATH}
 source activate ${BASEDIR}/../bin/envs/atac
 
 # CMD parameters
-PFLST=${1}
-BFLST=${2}
-OP=${3}
+ATYPE=${1}
+PFLST=${2}
+BFLST=${3}
+OP=${4}
 
 # Concatenate peaks
 rm -f ${OP}.concat.peaks
@@ -76,6 +77,13 @@ do
 done
 gzip ${OP}.counts
 
+# Split counts into TSS peaks and non-TSS peaks
+zcat ${OP}.counts.gz | head -n 1 > ${OP}.tss.counts
+bedtools intersect -wa -a <(zcat ${OP}.counts.gz | tail -n +2) -b <(zcat ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz) | sort -k1,1V -k2,2n | uniq >> ${OP}.tss.counts
+zcat ${OP}.counts.gz | head -n 1 > ${OP}.notss.counts
+bedtools intersect -v -wa -a <(zcat ${OP}.counts.gz | tail -n +2) -b <(zcat ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz) | sort -k1,1V -k2,2n | uniq >> ${OP}.notss.counts
+gzip ${OP}.tss.counts ${OP}.notss.counts
+rm ${OP}.counts.gz
+
 # Deactivate environment
 source deactivate
-
