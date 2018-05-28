@@ -83,7 +83,7 @@ bedtools intersect -wa -a <(zcat ${OP}.counts.gz | tail -n +2) -b <(zcat ${BASED
 zcat ${OP}.counts.gz | head -n 1 > ${OP}.notss.counts
 bedtools intersect -v -wa -a <(zcat ${OP}.counts.gz | tail -n +2) -b <(zcat ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz) | sort -k1,1V -k2,2n | uniq >> ${OP}.notss.counts
 gzip ${OP}.tss.counts ${OP}.notss.counts
-rm ${OP}.counts.gz
+#rm ${OP}.counts.gz
 
 # Deactivate environment
 source deactivate
