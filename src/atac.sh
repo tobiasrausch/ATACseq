@@ -40,5 +40,8 @@ rm ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep1.bam.bai ${OUTP}.pseudorep2.bam ${OU
 # Annotate peaks
 ${BASEDIR}/homer.sh ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}
 
+# Motif discovery
+${BASEDIR}/motif.sh ${OUTP}.peaks ${OUTP}
+
 # Aggregate key QC metrics
 ${BASEDIR}/qc_globber.sh ${OUTP}

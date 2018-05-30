@@ -6,6 +6,7 @@ atac.slurm_submit.sh
 bin/
 bed/
 example/
+*.*~
 
 # Compiled Object files
 *.slo
