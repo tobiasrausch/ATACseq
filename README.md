@@ -9,7 +9,7 @@ ATAC-Seq Pipeline Installation
 
 If one of the above commands fail your operating system probably lacks some build essentials. These are usually pre-installed but if you lack them you need to install these. For instance, for Ubuntu this would require:
 
-`apt-get install build-essential g++ git wget`
+`apt-get install build-essential g++ git wget unzip`
 
 
 Building Promoter Regions for QC
