@@ -7,6 +7,10 @@ ATAC-Seq Pipeline Installation
 
 `make all`
 
+Your operating system needs to have git, make, wget and some basic build essentials. These are usually pre-installed but if you run into issues try the below as root (for Ubuntu).
+
+`apt-get install build-essential g++ git wget`
+
 
 Building Promoter Regions for QC
 --------------------------------
