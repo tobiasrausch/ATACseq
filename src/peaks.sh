@@ -66,17 +66,15 @@ gzip ${OUTP}.unfiltered.peaks
 gzip ${OUTP}.idr
 
 # Fraction of reads in unfiltered peaks
-alfred qc -b ${OUTP}.unfiltered.peaks.gz -r ${HG} -o ${OUTP}.bamStats.peaks.tsv.gz ${OUTP}.merge.bam
-COL=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | tr '\t' '\n' | grep -n -w "#AlignedBases" | cut -f 1 -d ':'`
-TOTALBP=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | cut -f ${COL} | tail -n 1`
-COL=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | tr '\t' '\n' | grep -n -w "#AlignedBasesInBed" | cut -f 1 -d ':'`
-TOTALBE=`zgrep ^ME ${OUTP}.bamStats.peaks.tsv.gz | cut -f ${COL} | tail -n 1`
-FRACPEAK=`echo "${TOTALBE} / ${TOTALBP}" | bc -l`
+alfred qc -b ${OUTP}.unfiltered.peaks.gz -r ${HG} -o ${OUTP}.bamStats.peaks.tsv.gz ${REP1}
+FRACPEAK1=`zgrep "^ME" qc.tsv.gz  | datamash transpose | grep "^FractionInBed" | cut -f 2`
+alfred qc -b ${OUTP}.unfiltered.peaks.gz -r ${HG} -o ${OUTP}.bamStats.peaks.tsv.gz ${REP2}
+FRACPEAK2=`zgrep "^ME" qc.tsv.gz  | datamash transpose | grep "^FractionInBed" | cut -f 2`
 rm ${OUTP}.merge.bam ${OUTP}.merge.bam.bai ${OUTP}.bamStats.peaks.tsv.gz
 
 # Summarize peak statistics
 echo -e "totpeaks\tfrip\tsigpeaks\trep1\trep2\trecallRep1\trecallRep2" > ${OUTP}.peaks.log
-echo -e "${PKTOTAL}\t${FRACPEAK}\t${SIGTOTAL}\t${RECALLREP1}\t${RECALLREP2}\t${FRACREP1}\t${FRACREP2}" >> ${OUTP}.peaks.log
+echo -e "${PKTOTAL}\t${FRACPEAK1},${FRACPEAK2}\t${SIGTOTAL}\t${RECALLREP1}\t${RECALLREP2}\t${FRACREP1}\t${FRACREP2}" >> ${OUTP}.peaks.log
 
 # Create UCSC track
 echo "track type=narrowPeak visibility=3 db=hg19 name=\"${OUTP}\" description=\"${OUTP} narrowPeaks\"" | gzip -c > ${OUTP}.narrowPeak.ucsc.bed.gz
