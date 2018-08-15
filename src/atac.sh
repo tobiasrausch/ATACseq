@@ -37,11 +37,12 @@ ${BASEDIR}/peaks.sh ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam ${HG} ${OUTP}
 # Delete pseudo-replicates
 rm ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep1.bam.bai ${OUTP}.pseudorep2.bam ${OUTP}.pseudorep2.bam.bai
 
+# Aggregate key QC metrics
+${BASEDIR}/qc_globber.sh ${OUTP}
+
 # Annotate peaks
 ${BASEDIR}/homer.sh ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}
 
 # Motif discovery
 ${BASEDIR}/motif.sh ${ATYPE} ${OUTP}.peaks ${OUTP}
 
-# Aggregate key QC metrics
-${BASEDIR}/qc_globber.sh ${OUTP}
