@@ -67,9 +67,10 @@ gzip ${OUTP}.idr
 
 # Fraction of reads in unfiltered peaks
 alfred qc -b ${OUTP}.unfiltered.peaks.gz -r ${HG} -o ${OUTP}.bamStats.peaks.tsv.gz ${REP1}
-FRACPEAK1=`zgrep "^ME" qc.tsv.gz  | datamash transpose | grep "^FractionInBed" | cut -f 2`
+FRACPEAK1=`zgrep "^ME" ${OUTP}.bamStats.peaks.tsv.gz  | datamash transpose | grep "^FractionInBed" | cut -f 2`
+rm ${OUTP}.bamStats.peaks.tsv.gz
 alfred qc -b ${OUTP}.unfiltered.peaks.gz -r ${HG} -o ${OUTP}.bamStats.peaks.tsv.gz ${REP2}
-FRACPEAK2=`zgrep "^ME" qc.tsv.gz  | datamash transpose | grep "^FractionInBed" | cut -f 2`
+FRACPEAK2=`zgrep "^ME" ${OUTP}.bamStats.peaks.tsv.gz  | datamash transpose | grep "^FractionInBed" | cut -f 2`
 rm ${OUTP}.merge.bam ${OUTP}.merge.bam.bai ${OUTP}.bamStats.peaks.tsv.gz
 
 # Summarize peak statistics
