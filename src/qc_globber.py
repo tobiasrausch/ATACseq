@@ -79,19 +79,6 @@ if args.prefix:
                 qc['FRiP'] = row['frip']
                 qc['PeakSaturation'] = str(min(float(row['recallRep1']), float(row['recallRep2'])))
 
-    # chrM fraction (ToDo: remove after next alfred upgrade)
-    filename = args.prefix + ".idxstats"
-    if os.path.isfile(filename):
-        with open(filename, 'r') as f:
-            f_reader = csv.reader(f, delimiter="\t")
-            total = 0
-            chrM = 0
-            for row in f_reader:
-                total += int(row[2])
-                if (row[0] == "M") or (row[0] == "chrM") or (row[0] == "MT") or (row[0] == "chrMT"):
-                    chrM = int(row[2])
-            qc['FractionChrM'] = str(float(chrM)/float(total))
-
 # Output summary QC information
 cols = sorted(qc.keys())
 print('\t'.join(cols))
