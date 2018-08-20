@@ -68,9 +68,13 @@ if args.prefix:
                         qc['TssEnrichment'] = row[header['EnrichmentOverBed']]
 
     # Peak calling statistics
-    qc['UnfilteredPeaks'] = str(linecount(args.prefix + ".unfiltered.peaks.gz"))
-    qc['FilteredPeaks'] = str(linecount(args.prefix + ".peaks"))
-    qc['FractionPeaksRetained'] = str(float(qc['FilteredPeaks'])/float(qc['UnfilteredPeaks']))
+    filename = args.prefix + ".unfiltered.peaks.gz"
+    if os.path.isfile(filename):
+        qc['UnfilteredPeaks'] = str(linecount(filename))
+        filename = args.prefix + ".peaks"
+        if os.path.isfile(filename):
+            qc['FilteredPeaks'] = str(linecount(filename))
+            qc['FractionPeaksRetained'] = str(float(qc['FilteredPeaks'])/float(qc['UnfilteredPeaks']))
     filename = args.prefix + ".peaks.log"
     if os.path.isfile(filename):
         with open(filename, 'r') as f:

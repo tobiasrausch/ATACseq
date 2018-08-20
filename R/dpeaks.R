@@ -56,7 +56,7 @@ q
 dds = DESeq(dds)
 
 # log-foldchange > 1, adjusted p-value < 5%
-#res = results(dds, lfcThreshold=1, alpha=0.05)
+#res = results(dds, lfcThreshold=0.25, alpha=0.05)
 res = results(dds, lfcThreshold=0, alpha=0.05)
 print(mcols(res, use.names=T))
 print(summary(res))
