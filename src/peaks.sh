@@ -38,6 +38,7 @@ for PEAKBAM in ${OUTP}.merge.bam ${REP1} ${REP2}
 do
     PEAKN=${PEAKBAM}.suf
     macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZE} -n ${PEAKN} -t ${PEAKBAM}
+    #macs2 callpeak -g hs --nomodel --keep-dup all -p 0.01 --shift 0 --extsize ${ISIZE} -n ${PEAKN} -t ${PEAKBAM} -f BAMPE
     rm ${PEAKN}_summits.bed ${PEAKN}_peaks.xls
 done
 source deactivate
