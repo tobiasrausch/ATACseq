@@ -22,7 +22,11 @@ OUTP=${3}
 
 # Run motif finding
 mkdir ${OUTP}_motifs
+
 findMotifsGenome.pl ${PEAKS} ${ATYPE} ${OUTP}_motifs/ -size 50 -mask
+#or using a dedicated background peak set
+#findMotifsGenome.pl ${PEAKS} ${ATYPE} ${OUTP}_motifs/ -bg <(zcat ${BASEDIR}/../bed/background.peaks.bed.gz) -size 50 -mask
+
 
 # Deactivate environment
 source deactivate

@@ -57,3 +57,15 @@ To call differential peaks on a count matrix for TSS peaks, called counts.tss.gz
 
 `Rscript R/dpeaks.R counts.tss.gz sample.info`
 
+
+Citation
+--------
+
+Tobias Rausch, Markus Hsi-Yang Fritz, Jan O Korbel, Vladimir Benes.
+[Alfred: Interactive multi-sample BAM alignment statistics, feature counting and feature annotation for long- and short-read sequencing.](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty1007/5232224)
+Bioinformatics.
+
+
+License
+-------
+This ATAC-Seq pipeline is distributed under the GPLv3.
