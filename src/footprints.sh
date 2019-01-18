@@ -31,8 +31,8 @@ source deactivate
 source activate ${BASEDIR}/../bin/envs/atac2
 
 # Find suitable cutoff for > 10,000 peaks
-macs2 bdgpeakcall --cutoff-analysis -l 50 -i <(zcat ${OUTP}.footprint.bedGraph.gz) -o ${OUTP}.footprint.peaks
-CUTOFF=`tail -n +2 ${OUTP}.footprint.peaks | awk '$2>10000' | head -n 1 | cut -f 1 | awk '{print int($1);}'`
+macs2 bdgpeakcall --cutoff-analysis -l 50 -i <(zcat ${OUTP}.footprint.bedGraph.gz) -o ${OUTP}.footprints
+CUTOFF=`tail -n +2 ${OUTP}.footprints | awk '$2>10000' | head -n 1 | cut -f 1 | awk '{print int($1);}'`
 echo ${CUTOFF}
 # At least 5 spanning pairs
 if [ ${CUTOFF} -lt 5 ]
@@ -41,6 +41,6 @@ then
 fi
 
 # Call peaks
-macs2 bdgpeakcall -c ${CUTOFF} -l 50 -i <(zcat ${OUTP}.footprint.bedGraph.gz) -o ${OUTP}.footprint.peaks
+macs2 bdgpeakcall -c ${CUTOFF} -l 50 -i <(zcat ${OUTP}.footprint.bedGraph.gz) -o ${OUTP}.footprints
 
 source deactivate
