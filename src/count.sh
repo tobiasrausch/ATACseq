@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]
+if [ $# -lt 4 ]
 then
     echo ""
-    echo "Usage: $0 <hg19|mm10> <peak.file.lst> <bam.file.lst> <output prefix>"
+    echo "Usage: $0 <hg19|mm10> <peak.file.lst> <bam.file.lst> <output prefix> [PEAKS|FOOTPRINTS]"
     echo ""
     exit -1
 fi
@@ -20,6 +20,14 @@ ATYPE=${1}
 PFLST=${2}
 BFLST=${3}
 OP=${4}
+FOOTPRINTS=0
+if [ $# -eq 5 ]
+then
+    if [ ${5} == "FOOTPRINTS" ]
+    then
+	FOOTPRINTS=1
+    fi
+fi
 
 # Concatenate peaks
 rm -f ${OP}.concat.peaks
@@ -54,7 +62,12 @@ do
 	echo "BAM file does not exist:" ${B}
 	exit -1
     else
-	alfred count_dna -o ${OP}.count.gz -i ${OP}.clustered.peaks.gz ${B}
+	if [ ${FOOTPRINTS} -eq 1 ]
+	then
+	    alfred count_dna -f 200,1000 -o ${OP}.count.gz -i ${OP}.clustered.peaks.gz ${B}
+	else
+	    alfred count_dna -o ${OP}.count.gz -i ${OP}.clustered.peaks.gz ${B}
+	fi
 	SID=`zcat ${OP}.count.gz | head -n 1 | cut -f 5`
 	mv ${OP}.count.gz ${OP}.${SID}.count.gz
     fi
@@ -83,7 +96,6 @@ bedtools intersect -wa -a <(zcat ${OP}.counts.gz | tail -n +2) -b <(zcat ${BASED
 zcat ${OP}.counts.gz | head -n 1 > ${OP}.notss.counts
 bedtools intersect -v -wa -a <(zcat ${OP}.counts.gz | tail -n +2) -b <(zcat ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz) | sort -k1,1V -k2,2n | uniq >> ${OP}.notss.counts
 gzip ${OP}.tss.counts ${OP}.notss.counts
-#rm ${OP}.counts.gz
 
 # Deactivate environment
 source deactivate
