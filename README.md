@@ -12,10 +12,14 @@ If one of the above commands fail your operating system probably lacks some buil
 `apt-get install build-essential g++ git wget unzip`
 
 
-Building Promoter Regions for QC
---------------------------------
+Building promoter regions for QC and downloading motifs
+-------------------------------------------------------
 
-`cd bed/ && Rscript promoter.R`
+To annotate motifs and estimate TSS enrichments some simple scripts are included in this repository to download these databases.
+
+`cd bed/ && Rscript promoter.R && cd ..`
+
+`cd motif/ && ./downloadMotifs.sh && cd ..`
 
 
 Running the ATAC-Seq analysis pipeline for a single sample
@@ -56,6 +60,14 @@ To call differential peaks on a count matrix for TSS peaks, called counts.tss.gz
 `zcat counts.tss.gz | head -n 1 | cut -f 5- | tr '\t' '\n' | sed 's/.final$//' | awk '{print $0"\t"int((NR-1)/2);}' >> sample.info`
 
 `Rscript R/dpeaks.R counts.tss.gz sample.info`
+
+
+Footprinting
+------------
+
+The pipeline also has a module to call footprints of nucleosome occupancy or transcription factor binding occupancy that are annotated for motif hits.
+
+`./src/footprints.sh <hg19|mm10> <genome.fa> <input.bam> <output prefix>`
 
 
 Citation
