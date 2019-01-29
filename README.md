@@ -31,7 +31,7 @@ Running the ATAC-Seq analysis pipeline for a single sample
 Plotting the key ATAC-Seq Quality Control metrics
 -------------------------------------------------
 
-If you have multiple output folders (one for each ATAC-Seq sample) you can simply concatenate the QC metrics of each sample.
+The pipeline produces at various steps JSON QC files (`*.json.gz`). You can upload and interactively browse these files at [https://gear.embl.de/alfred/](https://gear.embl.de/alfred/). In addition, the pipeline produces a succinct QC file for each sample. If you have multiple output folders (one for each ATAC-Seq sample) you can simply concatenate the QC metrics of each sample.
 
 `head -n 1 ./*/*.key.metrics | grep "TssEnrichment" | uniq > summary.tsv`
 
