@@ -44,6 +44,9 @@ ${BASEDIR}/footprints.sh ${ATYPE} ${HG} ${OUTP}.final.bam ${OUTP}
 # Aggregate key QC metrics
 ${BASEDIR}/qc_globber.sh ${OUTP}
 
+# Variant calling
+${BASEDIR}/variants.sh ${HG} ${OUTP} ${OUTP}.final.bam
+
 # Annotate peaks
 ${BASEDIR}/homer.sh ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}
 
