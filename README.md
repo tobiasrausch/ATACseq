@@ -62,14 +62,6 @@ To call differential peaks on a count matrix for TSS peaks, called counts.tss.gz
 `Rscript R/dpeaks.R counts.tss.gz sample.info`
 
 
-Footprinting
-------------
-
-The pipeline also has a module to call footprints of nucleosome occupancy or transcription factor binding occupancy that are annotated for motif hits.
-
-`./src/footprints.sh <hg19|mm10> <genome.fa> <input.bam> <output prefix>`
-
-
 Citation
 --------
 

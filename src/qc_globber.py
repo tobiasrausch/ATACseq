@@ -80,7 +80,11 @@ if args.prefix:
         with open(filename, 'r') as f:
             f_reader = csv.DictReader(f, delimiter="\t")
             for row in f_reader:
-                qc['FRiP'] = row['frip']
+                frip = row['frip'].split(',')
+                if len(frip) == 2:
+                    qc['FRiP'] = str(min(float(frip[0]), float(frip[1])))
+                else:
+                    qc['FRiP'] = row['frip']
                 qc['PeakSaturation'] = str(min(float(row['recallRep1']), float(row['recallRep2'])))
 
 # Output summary QC information
