@@ -49,7 +49,7 @@ The ATAC-Seq pipeline produces various output files.
 
 * [Bowtie](https://github.com/BenLangmead/bowtie) BAM alignment files filtered for duplicates and mitochondrial reads.
 * Quality control output files from [alfred](https://github.com/tobiasrausch/alfred), [samtools](http://www.htslib.org/), [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and cutadapt adapter filter metrics.
-* (Macs)[https://github.com/taoliu/MACS] peak calling files and IDR filtered peak lists.
+* [Macs](https://github.com/taoliu/MACS) peak calling files and [IDR](https://www.encodeproject.org/software/idr/) filtered peak lists.
 * Succinct browser tracks in bedGraph format and IGV's tdf format.
 * Footprint track of nucleosome positions and/or transcription factor bound DNA.
 * [Homer](http://homer.ucsd.edu/homer/motif/) motif finding results.
