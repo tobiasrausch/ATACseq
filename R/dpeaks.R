@@ -39,6 +39,15 @@ pheatmap(sampleDistMatrix, clustering_distance_rows = sampleDists, clustering_di
 
 # PCA
 pca = prcomp(t(assay(vsd)[selectIDX,]))
+print(summary(pca))
+
+# Check loadings (which peaks contribute most to each PC)
+loadings = abs(pca$rotation)
+contribution = as.data.frame(sweep(loadings, 2, colSums(loadings), "/"))
+contribution = contribution[with(contribution, order(-PC1)),]
+print(head(contribution))
+
+# Plot PCA
 pcaData = as.data.frame(pca$x)
 pcaData$name=rownames(pcaData)
 pcaData=merge(pcaData, s)
