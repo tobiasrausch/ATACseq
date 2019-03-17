@@ -7,9 +7,17 @@ s = read.table("sample.info.tsv", header=T)
 rownames(x) = x$id
 rownames(s) = s$name
 
-dds = DESeqDataSetFromMatrix(countData = x[,5:ncol(x)], colData = s, design = ~ celltype)
+dds = DESeqDataSetFromMatrix(countData = x[,5:ncol(x)], colData = s, design = ~ 1)
+dds = estimateSizeFactors(dds)
+form = ~ (1|celltype) + (1|sex)
 vsd = vst(dds)
+varPart = fitExtractVarPartModel( assay(vsd), form, s)
+vp = sortCols(varPart)
+plotPercentBars(vp[1:10,])
+plotVarPart(vp)
 
+
+# pvca
 pct_threshold = 0.5
 batch.factors = c("celltype", "sex")
 #batch.factors = c("patient", "sex")
@@ -23,13 +31,3 @@ values = pvcaObj$dat
 new_values = round(values, 3)
 text(bp, pvcaObj$dat, labels=new_values, pos=3, cex=0.8)
 dev.off()
-
-# Variance partition
-peakcounts = x[,5:ncol(x)]
-form = ~ (1|celltype) + (1|sex)
-peakcounts = peakcounts[apply(peakcounts, 1, sum) > 200,]
-print(dim(peakcounts))
-varPart = fitExtractVarPartModel(peakcounts, form, s)
-vp = sortCols(varPart)
-plotPercentBars(vp[1:10,])
-plotVarPart(vp)
