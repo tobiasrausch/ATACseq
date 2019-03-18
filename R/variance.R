@@ -9,13 +9,7 @@ rownames(s) = s$name
 
 dds = DESeqDataSetFromMatrix(countData = x[,5:ncol(x)], colData = s, design = ~ 1)
 dds = estimateSizeFactors(dds)
-form = ~ (1|celltype) + (1|sex)
 vsd = vst(dds)
-varPart = fitExtractVarPartModel( assay(vsd), form, s)
-vp = sortCols(varPart)
-plotPercentBars(vp[1:10,])
-plotVarPart(vp)
-
 
 # pvca
 pct_threshold = 0.5
@@ -31,3 +25,11 @@ values = pvcaObj$dat
 new_values = round(values, 3)
 text(bp, pvcaObj$dat, labels=new_values, pos=3, cex=0.8)
 dev.off()
+quit()
+
+form = ~ (1|celltype) + (1|sex)
+varPart = fitExtractVarPartModel( assay(vsd), form, s)
+vp = sortCols(varPart)
+plotPercentBars(vp[1:10,])
+plotVarPart(vp)
+
