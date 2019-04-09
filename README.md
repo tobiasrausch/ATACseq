@@ -75,6 +75,24 @@ To call differential peaks on a count matrix for TSS peaks, called counts.tss.gz
 `Rscript R/dpeaks.R counts.tss.gz sample.info`
 
 
+Intersecting peaks with annotation tracks
+-----------------------------------------
+
+Peaks can of course be intersected with enhancer or conserved element tracks, i.e.:
+
+`cd tracks/ && downloadTracks.sh`
+
+`bedtools intersect -a ./Sample2/Sample2.peaks -b tracks/conserved.bed`
+
+
+Plotting peak density along all chromosomes
+-------------------------------------------
+
+There is a basic Rscript available for plotting peak densities.
+
+`Rscript R/karyoplot.R input.peaks`
+
+
 Citation
 --------
 
