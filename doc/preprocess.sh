@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#wget 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE74nnn/GSE74912/suppl/GSE74912_ATACseq_All_Counts.txt.gz'
+wget 'ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE74nnn/GSE74912/suppl/GSE74912_ATACseq_All_Counts.txt.gz'
 
 # Extract blood samples
 cat sample.mapping | grep "5483$" | grep -v "CLP" > select.samples
