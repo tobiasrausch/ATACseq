@@ -4,17 +4,11 @@ output:
     fig_width: 10
 ---
 
-# ATAC-Seq Data Analysis Tutorial
-
-In this tutorial we will analyze the ATAC-Seq data from this [publication](https://www.ncbi.nlm.nih.gov/pubmed/27526324). The manuscript investigates the chromatin accessibility landscape of 13 human primary blood cell types. We will try to identify regulatory regions that govern hematopoietic differentiation.
-
-## Data Set
-
-The authors kindly provided a pre-processed [ATAC-Seq Count Matrix](ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE74nnn/GSE74912/suppl/GSE74912_ATACseq_All_Counts.txt.gz) which we will use in this tutorial. If you are interested in the basic Bioinformatics methods how ATAC-Seq data is aligned to the human reference genome, quality controlled and processed for peak calling and peak annotation you can have a look at our [ATAC-Seq pipeline](https://github.com/tobiasrausch/ATACseq). In this tutorial we will start with the raw count matrix of read counts per sample (columns) and peak (rows).
+# ATAC-Seq Data Analysis
 
 ## Methods
 
-We will explore methods for measuring the central value:
+In this tutorial we will explore methods for measuring the central value:
 
 * [Mean](https://en.wikipedia.org/wiki/Mean)
 * [Median](https://en.wikipedia.org/wiki/Median)
@@ -45,9 +39,7 @@ Methods for gene set and pathway enrichment and visualizing differential peak ca
 * [Pathway analysis](https://en.wikipedia.org/wiki/Pathway_analysis)
 
 
-## Analysis
-
-### R libraries
+## R libraries
 
 We need a couple of libraries for the exercises. Let's load them all upfront:
 
@@ -67,7 +59,7 @@ library(pheatmap)
 ```
 
 
-### Load the ATAC-Seq count matrix
+## Load the ATAC-Seq count matrix
 
 Let's load the count matrix and the sample information with the blood type and donor.
 
@@ -83,7 +75,7 @@ pander(head(si))
 print(summary(si))
 ```
 
-### Removing missing peaks
+## Removing missing peaks
 
 The original count matrix had many more samples and thus, we have now a number of peaks in our matrix that are actually not present anymore.
 Let's remove all the rows where not a single sample has more than 50 reads.
@@ -97,7 +89,7 @@ pander(quantile(rowMeans(cm)))
 pander(quantile(apply(cm, 1, max)))
 ```
 
-### Data Exploration
+## Data Exploration
 
 With the cleaned data, we can of course now compute simple statistics for each sample like the mean read count and standard deviation of counts across peaks. Box plots are useful for summarizing the distribution of read counts.
 
@@ -139,7 +131,7 @@ rowsummary = data.frame(rowmeans = apply(df[, 4:ncol(df)], 1, mean), rowsds = ap
 ggplot(data=rowsummary, aes(x=rowmeans, y=rowsds)) + geom_point() + xlab("Peak means") + ylab("Peak SDs")
 ```
 
-### Data normalization 
+## Data normalization 
 
 Extensions of the simple log-transformation such as rlog or the [variance stabilizing transformation](https://en.wikipedia.org/wiki/Variance-stabilizing_transformation) have been developed and are often applied to count data sets. [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) also provides a method to compute normalized counts that account for library size and variance-mean dependencies.
 
@@ -151,7 +143,7 @@ cm = data.frame(counts(dds, normalized=TRUE))
 rownames(cm) = paste0(df$Chr, '_', df$Start, '_', df$End)
 ```
 
-### Data visualization
+## Data visualization
 
 Let's explore the normalized counts.
 
@@ -165,7 +157,7 @@ ggplot(data=libsize, aes(x=x, y=y)) + geom_point() + geom_smooth(method="lm") + 
 ```
 
 
-### Principal component analysis (PCA)
+## Principal component analysis (PCA)
 
 Let's do a PCA on the normalized counts and project the cell-type information onto the PCA plot.
 
@@ -204,7 +196,7 @@ pander(head(contribution))
 ```
 
 
-### Annotate genomic context
+## Annotate genomic context
 
 Let's annotate the genomic context of each peak such as nearby genes a given peak may regulate.
 
@@ -233,7 +225,7 @@ dotplot(pathway1)
 Heme metabolism is important during erythropoiesis and the neutrophil degranulation pathway is important for cells of the immune system. Hence, it makes sense that these peaks separate the Erythroid cells from the white blood cells.
 
 
-### Differential peak calling
+## Differential peak calling
 
 We can also identify differential peaks between two cell types using DESeq2.
 
