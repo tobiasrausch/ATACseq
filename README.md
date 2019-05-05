@@ -96,7 +96,7 @@ There is a basic Rscript available for plotting peak densities.
 ATAC-Seq Data Analysis Tutorial
 -------------------------------
 
-As part of the [Clinical Genomics and NGS course](https://tobiasrausch.com/courses/atac/) we put together a [ATAC-Seq tutorial in R Statistics](https://tobiasrausch.com/courses/atac/).
+As part of the [Clinical Genomics and NGS course](http://ceub.it/events/event/clinical-genomics-and-ngs-3/) we put together a [ATAC-Seq tutorial in R Statistics](https://tobiasrausch.com/courses/atac/).
 
 
 Citation
