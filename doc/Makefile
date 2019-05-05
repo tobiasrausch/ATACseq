@@ -26,7 +26,7 @@ install: .Rinstall requirements.R
 	export PATH=${PBASE}/R/bin:${PATH} && Rscript requirements.R
 
 clean:
-	rm -rf $(TARGETS) Rplots.pdf atac_files/
+	rm -rf $(TARGETS) Rplots.pdf atac_files/ _book/ _bookdown_files/ requirements.R _main.rds
 
 distclean:
 	rm -rf .Rinstall R/

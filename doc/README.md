@@ -24,7 +24,19 @@ You can build the ATAC-Seq book in HTML using
 
 `make book`
 
+You can then browse the tutorial content using
+
+`firefox _book/index.html`
+
 The online version of these HTML files you can find [here](https://tobiasrausch.com/)
+
+
+Generating R scripts
+--------------------
+
+You can convert the Rmarkdown file to a standard Rscript file using
+
+`make atac`
 
 
 Credits
