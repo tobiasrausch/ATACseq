@@ -1,0 +1,281 @@
+---
+output:
+  html_document:
+    fig_width: 10
+---
+
+# ATAC-Seq Data Analysis Tutorial
+
+In this tutorial we will analyze the ATAC-Seq data from this [publication](https://www.ncbi.nlm.nih.gov/pubmed/27526324). The manuscript investigates the chromatin accessibility landscape of 13 human primary blood cell types. We will try to identify regulatory regions that govern hematopoietic differentiation.
+
+## Data Set
+
+The authors kindly provided a pre-processed [ATAC-Seq Count Matrix](ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE74nnn/GSE74912/suppl/GSE74912_ATACseq_All_Counts.txt.gz) which we will use in this tutorial. If you are interested in the basic Bioinformatics methods how ATAC-Seq data is aligned to the human reference genome, quality controlled and processed for peak calling and peak annotation you can have a look at our [ATAC-Seq pipeline](https://github.com/tobiasrausch/ATACseq). In this tutorial we will start with the raw count matrix of read counts per sample (columns) and peak (rows).
+
+## Methods
+
+We will explore methods for measuring the central value:
+
+* [Mean](https://en.wikipedia.org/wiki/Mean)
+* [Median](https://en.wikipedia.org/wiki/Median)
+
+Methods for measuring the variance or dispersion of the data:
+
+* [Standard Deviation](https://en.wikipedia.org/wiki/Standard_deviation)
+* [Range](https://en.wikipedia.org/wiki/Range_(statistics))
+* [Quartiles](https://en.wikipedia.org/wiki/Quartile)
+* [Inter Quartile Range (IQR)](https://en.wikipedia.org/wiki/Interquartile_range)
+
+Methods for data exploration and visualization:
+
+* [Principal component analysis](https://en.wikipedia.org/wiki/Principal_component_analysis)
+* [Box plots](https://en.wikipedia.org/wiki/Box_plot)
+* [Histogram](https://en.wikipedia.org/wiki/Histogram)
+
+Methods for genomic count data normalization and differential peak calling:
+
+* [Data transformation](https://en.wikipedia.org/wiki/Data_transformation_(statistics))
+* [Variance stabilizing transformation](https://en.wikipedia.org/wiki/Variance-stabilizing_transformation)
+* [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)
+
+Methods for gene set and pathway enrichment and visualizing differential peak calling results:
+
+* [Heat map](https://en.wikipedia.org/wiki/Heat_map)
+* [Gene set enrichment analysis](https://en.wikipedia.org/wiki/Gene_set_enrichment_analysis)
+* [Pathway analysis](https://en.wikipedia.org/wiki/Pathway_analysis)
+
+
+## Analysis
+
+### R libraries
+
+We need a couple of libraries for the exercises. Let's load them all upfront:
+
+```{r loadLibraries, message=FALSE}
+library(ggplot2)
+library(reshape2)
+library(pander)
+library(Hmisc)
+library(pastecs)
+library(DESeq2)
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(ReactomePA)
+library(pheatmap)
+```
+
+
+### Load the ATAC-Seq count matrix
+
+Let's load the count matrix and the sample information with the blood type and donor.
+
+```{r loadData}
+df = read.table("atac.data.gz", header=T)
+si = read.table("blood.samples", header=F)
+colnames(si) = c("sample", "celltype", "donor")
+rownames(si) = si$sample
+si$donor = factor(si$donor)
+pander(dim(df), "Data dimensions")
+pander(head(df))
+pander(head(si))
+print(summary(si))
+```
+
+### Removing missing peaks
+
+The original count matrix had many more samples and thus, we have now a number of peaks in our matrix that are actually not present anymore.
+Let's remove all the rows where not a single sample has more than 50 reads.
+
+```{r peakCleanup}
+df = df[apply(df[,4:ncol(df)], 1, max) > 50,]
+pander(dim(df), "Data dimensions")
+cm = df[,4:ncol(df)]
+pander(quantile(rowSums(cm)))
+pander(quantile(rowMeans(cm)))
+pander(quantile(apply(cm, 1, max)))
+```
+
+### Data Exploration
+
+With the cleaned data, we can of course now compute simple statistics for each sample like the mean read count and standard deviation of counts across peaks. Box plots are useful for summarizing the distribution of read counts.
+
+```{r dataOverview}
+print(mean(df$NK_11A))
+print(sd(df$NK_11A))
+sim = rnorm(1000, mean=100, sd=10)
+boxplot(sim)
+hist(sim)
+pander(quantile(sim))
+boxplot(df$NK_11A)
+hist(df$NK_11A)
+pander(quantile(df$NK_11A))
+```
+
+A common technique for labelling outliers uses the 25% and 75% quantiles.
+
+```{r outlier}
+pw = df$NK_11A
+uq = quantile(pw, 0.75)
+print(mean(pw > 1.5 * uq))
+iqr = IQR(pw)
+print(mean(pw > 3 * iqr))
+```
+
+
+We obviously have a very skewed distribution with a long tail. This is very common in Genomics and the standard approach to account for such a skewed distribution is some kind of log-transformation of the count data.
+
+```{r logTransform}
+pw = log(df$NK_11A + 1)
+boxplot(pw)
+hist(pw)
+```
+
+The other major problem in genomic count data sets is that they often show [heteroscedasticity](https://en.wikipedia.org/wiki/Heteroscedasticity) which means in our case that different peaks show different levels of variabilities in the number of reads. This is a major problem for differential peak calling.
+
+```{r heteroscedasticity}
+rowsummary = data.frame(rowmeans = apply(df[, 4:ncol(df)], 1, mean), rowsds = apply(df[, 4:ncol(df)], 1, sd))
+ggplot(data=rowsummary, aes(x=rowmeans, y=rowsds)) + geom_point() + xlab("Peak means") + ylab("Peak SDs")
+```
+
+### Data normalization 
+
+Extensions of the simple log-transformation such as rlog or the [variance stabilizing transformation](https://en.wikipedia.org/wiki/Variance-stabilizing_transformation) have been developed and are often applied to count data sets. [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) also provides a method to compute normalized counts that account for library size and variance-mean dependencies.
+
+```{r dataNormalization, message=FALSE}
+counts = df[,4:ncol(df)]
+dds = DESeqDataSetFromMatrix(countData = counts[,order(colnames(counts))], colData = si, design = ~ celltype)
+dds = DESeq(dds)
+cm = data.frame(counts(dds, normalized=TRUE))
+rownames(cm) = paste0(df$Chr, '_', df$Start, '_', df$End)
+```
+
+### Data visualization
+
+Let's explore the normalized counts.
+
+```{r dataExploration}
+lf = melt(cm, id.vars=c())
+pander(head(lf))
+ggplot(data=lf, aes(x=variable, y=value)) + geom_boxplot(aes(group=variable)) + xlab("Sample") + ylab("Normalized Count") + coord_flip()
+ggplot(data=lf, aes(x=value)) + geom_freqpoly(aes(group=variable, color=variable), bins=30) + xlab("Sample") + ylab("Normalized Count")
+libsize = data.frame(x=sizeFactors(dds), y=colSums(assay(dds)))
+ggplot(data=libsize, aes(x=x, y=y)) + geom_point() + geom_smooth(method="lm") + xlab("Estimated size factor") + ylab("Library size")
+```
+
+
+### Principal component analysis (PCA)
+
+Let's do a PCA on the normalized counts and project the cell-type information onto the PCA plot.
+
+```{r pca}
+pca = prcomp(t(cm))
+print(summary(pca))
+pcaData = as.data.frame(pca$x)
+pcaData$sample=rownames(pcaData)
+pcaData=merge(pcaData, si)
+percentVar = round(100 * (pca$sdev^2 / sum( pca$sdev^2 ) ))
+p=ggplot(data=pcaData, aes(x = PC1, y = PC2, color=celltype)) + geom_point(size=3)
+p=p+xlab(paste0("PC1: ", percentVar[1], "% variance"))
+p=p+ylab(paste0("PC2: ", percentVar[2], "% variance"))
+print(p)
+q=ggplot(data=pcaData, aes(x = PC3, y = PC4, color=celltype)) + geom_point(size=3)
+q=q+xlab(paste0("PC3: ", percentVar[3], "% variance"))
+q=q+ylab(paste0("PC4: ", percentVar[4], "% variance"))
+print(q)
+```
+
+We can also check the proportion of variance explained by each PC.
+
+```{r proportionVariation}
+varexp = data.frame(x=1:length(percentVar), y=percentVar)
+varexp$x = factor(varexp$x)
+ggplot(data=varexp, aes(x=x, y=y)) + geom_bar(stat="identity") + xlab("Principal Component") + ylab("Proportion of variation (%)")
+```
+
+Lastly we can inspect the loadings for each PC. That is we can investigate which peaks contribute most to the separation of the individual cell types.
+
+```{r pcaLoadings}
+loadings = abs(pca$rotation)
+contribution = as.data.frame(sweep(loadings, 2, colSums(loadings), "/"))
+contribution = contribution[with(contribution, order(-PC1)),]
+pander(head(contribution))
+```
+
+
+### Annotate genomic context
+
+Let's annotate the genomic context of each peak such as nearby genes a given peak may regulate.
+
+```{r annotateGenomicContext, message=FALSE}
+gr = makeGRangesFromDataFrame(df, keep.extra.columns=T)
+peakAnno = annotatePeak(gr, tssRegion=c(-1000, 1000), TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene, annoDb="org.Hs.eg.db")
+```
+
+The genomic context of all peaks can be ploted using:
+
+```{r plotGenomicContext}
+plotAnnoPie(peakAnno)
+```
+
+Let's have a look at the 500 peaks with the highest loading for PC1. Looking at the PCA plot PC1 seems to separate Erythroid cells from the others.
+
+```{r pathwayEnrichment}
+dfPA = as.data.frame(peakAnno)
+rownames(dfPA) = paste0(dfPA$seqnames, '_', dfPA$start, '_', dfPA$end)
+selpeaks = dfPA[rownames(head(contribution, 500)),]
+pathway1 = enrichPathway(selpeaks[abs(selpeaks$distance) < 5000,]$geneId)
+pander(head(pathway1))
+dotplot(pathway1)
+```
+
+Heme metabolism is important during erythropoiesis and the neutrophil degranulation pathway is important for cells of the immune system. Hence, it makes sense that these peaks separate the Erythroid cells from the white blood cells.
+
+
+### Differential peak calling
+
+We can also identify differential peaks between two cell types using DESeq2.
+
+```{r differentialPeaks}
+res = results(dds, lfcThreshold=1, contrast=c("celltype", "Bcell", "Ery"))
+print(mcols(res, use.names=T))
+print(summary(res))
+```
+
+The histogram of p-values is
+
+```{r histPValues}
+hist(res$pvalue, breaks=0:20/20, col="grey50", border="white", xlim=c(0,1), main="Histogram of p-values", xlab="p-value")
+```
+
+The log-fold changes can be visualized using
+
+```{r logFoldChange}
+plotMA(res, ylim = c(-5, 5))
+```
+
+Let's plot the significant results in a heatmap:
+
+```{r heatmap}
+print(sum(res$padj < 0.01 & abs(res$log2FoldChange) > 1))
+mat = cm[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1),]
+mat = mat - rowMeans(mat)
+anno = as.data.frame(colData(dds)[, c("sample", "celltype")])
+rownames(mat) = NULL
+pheatmap(mat, annotation_col = anno, scale="row")
+```
+
+For the up- and down-regulated peaks we can again perform pathway enrichment. Please note that up-regulated peaks are higher in B cells whereas down-regulated peaks are higher in Erythroid cells given our contrast of B-cells vs. Erythroid cells.
+
+```{r pathwayDiffPeaks}
+selpeaks = dfPA[rownames(cm[which(res$padj < 0.1 & res$log2FoldChange>0),]),]
+pathwayUp = enrichPathway(selpeaks[abs(selpeaks$distance) < 5000,]$geneId)
+pander(head(pathwayUp))
+selpeaks = dfPA[rownames(cm[which(res$padj < 0.1 & res$log2FoldChange<0),]),]
+pathwayDown = enrichPathway(selpeaks[abs(selpeaks$distance) < 5000,]$geneId)
+pander(head(pathwayDown))
+```
+
+There are many other methods for functional enrichments such as [GREAT](http://great.stanford.edu/) or [DAVID](https://david.ncifcrf.gov/).
+This concludes the ATAC-Seq tutorial. I hope you enjoyed it.

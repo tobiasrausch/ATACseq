@@ -1,0 +1,2 @@
+rmd_files: ["index.Rmd", "atac.Rmd"]
+new_session: yes
