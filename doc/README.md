@@ -28,7 +28,7 @@ You can then browse the tutorial content using
 
 `firefox _book/index.html`
 
-The online version of these HTML files you can find [here](https://tobiasrausch.com/)
+The online version of these HTML files you can find [here](https://tobiasrausch.com/courses/atac/)
 
 
 Generating R scripts
