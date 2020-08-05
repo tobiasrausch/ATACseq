@@ -106,6 +106,11 @@ Tobias Rausch, Markus Hsi-Yang Fritz, Jan O Korbel, Vladimir Benes.
 [Alfred: Interactive multi-sample BAM alignment statistics, feature counting and feature annotation for long- and short-read sequencing.](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty1007/5232224)      
 Bioinformatics. 2018 Dec 6.
 
+B Erarslan, JB Kunz, T Rausch, P Richter-Pechanska et al.
+[Chromatin accessibility landscape of pediatric T‐lymphoblastic leukemia and human T‐cell precursors](https://doi.org/10.15252/emmm.202012104)
+EMBO Mol Med (2020)
+
+
 License
 -------
 This ATAC-Seq pipeline is distributed under the GPLv3.
