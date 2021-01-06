@@ -39,7 +39,7 @@ ${BASEDIR}/peaks.sh ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam ${HG} ${OUTP}
 rm ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep1.bam.bai ${OUTP}.pseudorep2.bam ${OUTP}.pseudorep2.bam.bai
 
 # Footprints
-${BASEDIR}/footprints.sh ${ATYPE} ${HG} ${OUTP}.final.bam ${OUTP}
+#${BASEDIR}/footprints.sh ${ATYPE} ${HG} ${OUTP}.final.bam ${OUTP}
 
 # Aggregate key QC metrics
 ${BASEDIR}/qc_globber.sh ${OUTP}
