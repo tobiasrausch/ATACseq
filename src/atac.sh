@@ -48,7 +48,7 @@ ${BASEDIR}/qc_globber.sh ${OUTP}
 ${BASEDIR}/variants.sh ${HG} ${OUTP} ${OUTP}.final.bam
 
 # Annotate peaks
-${BASEDIR}/homer.sh ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}
+${BASEDIR}/homer.sh ${ATYPE} ${OUTP}.peaks ${OUTP}.final.bam ${HG} ${OUTP}
 
 # Motif discovery
 ${BASEDIR}/motif.sh ${ATYPE} ${OUTP}.peaks ${OUTP}

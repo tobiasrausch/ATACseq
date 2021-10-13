@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]
+if [ $# -ne 5 ]
 then
     echo ""
-    echo "Usage: $0 <peaks.tsv> <align.bam> <genome.fa> <output prefix>"
+    echo "Usage: $0 <hg19|mm10> <peaks.tsv> <align.bam> <genome.fa> <output prefix>"
     echo ""
     exit -1
 fi
@@ -16,10 +16,11 @@ export PATH=${BASEDIR}/../bin/bin:${PATH}
 source activate ${BASEDIR}/../bin/envs/atac2
 
 # CMD parameters
-PEAKS=${1}
-ALIGN=${2}
-HG=${3}
-OUTP=${4}
+ATYPE=${1}
+PEAKS=${2}
+ALIGN=${3}
+HG=${4}
+OUTP=${5}
 
 # create tag directory (should we use normGC? only unique, keepOne?)
 makeTagDirectory ${OUTP}/tagdir -genome ${HG} -checkGC ${ALIGN} 2> ${OUTP}.homer.log
