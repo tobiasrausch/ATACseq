@@ -25,7 +25,7 @@ OUTP=${4}
 makeTagDirectory ${OUTP}/tagdir -genome ${HG} -checkGC ${ALIGN} 2> ${OUTP}.homer.log
 
 # Annotated and normalized peaks
-annotatePeaks.pl ${PEAKS} hg19 -size given -annStats ${OUTP}.homer.annStats -d ${OUTP}/tagdir > ${OUTP}.annotated.normalized 2>> ${OUTP}.homer.log
+annotatePeaks.pl ${PEAKS} ${ATYPE} -size given -annStats ${OUTP}.homer.annStats -d ${OUTP}/tagdir > ${OUTP}.annotated.normalized 2>> ${OUTP}.homer.log
 
 # Deactivate environment
 source deactivate

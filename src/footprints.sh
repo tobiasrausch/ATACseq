@@ -26,7 +26,7 @@ OUTP=${4}
 
 # Call footprints
 alfred tracks -c 2 -o ${OUTP}.footprint.bedGraph.gz ${BAM}
-igvtools totdf ${OUTP}.footprint.bedGraph.gz ${OUTP}.footprint.tdf hg19
+igvtools totdf ${OUTP}.footprint.bedGraph.gz ${OUTP}.footprint.tdf ${ATYPE}
 
 # call peaks on bedGraph
 source deactivate

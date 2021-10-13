@@ -60,7 +60,7 @@ samtools idxstats ${OUTP}.rmdup.bam > ${OUTP}.idxstats
 samtools flagstat -@ ${THREADS} ${OUTP}.rmdup.bam > ${OUTP}.flagstat
 
 # Run stats on unfiltered BAM
-alfred qc -b ${BASEDIR}/../bed/hg19.promoter.bed.gz -r ${HG} -o ${OUTP}.bamStats.unfiltered.tsv.gz -j ${OUTP}.bamStats.unfiltered.json.gz ${OUTP}.rmdup.bam
+alfred qc -b ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz -r ${HG} -o ${OUTP}.bamStats.unfiltered.tsv.gz -j ${OUTP}.bamStats.unfiltered.json.gz ${OUTP}.rmdup.bam
 
 # Filter duplicates, mapping quality > QUAL, unmapped reads, chrM and unplaced contigs
 CHRS=`zcat ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz | cut -f 1 | sort -k1,1V -k2,2n | uniq | tr '\n' ' '`
@@ -69,7 +69,7 @@ samtools index -@ ${THREADS} ${OUTP}.final.bam
 rm ${OUTP}.rmdup.bam ${OUTP}.rmdup.bam.bai
 
 # Run stats using filtered BAM using promoter regions
-alfred qc -b ${BASEDIR}/../bed/hg19.promoter.bed.gz -r ${HG} -o ${OUTP}.bamStats.promoters.tsv.gz -j ${OUTP}.bamStats.promoters.json.gz ${OUTP}.final.bam
+alfred qc -b ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz -r ${HG} -o ${OUTP}.bamStats.promoters.tsv.gz -j ${OUTP}.bamStats.promoters.json.gz ${OUTP}.final.bam
 
 # Create browser tracks (ToDo)
 alfred tracks -o ${OUTP}.bedGraph.gz ${OUTP}.final.bam
