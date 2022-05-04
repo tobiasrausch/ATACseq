@@ -12,5 +12,6 @@ promoterTable = function(id) {
 	  close(gz)
 }
 
+promoterTable("hg38")
 promoterTable("hg19")
 promoterTable("mm10")
