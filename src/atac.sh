@@ -11,7 +11,7 @@ then
     echo "Please cite: https://doi.org/10.1093/bioinformatics/bty1007"
     echo "**********************************************************************"
     echo ""
-    echo "Usage: $0 <hg19|mm10> <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>"
+    echo "Usage: $0 <hg38|hg19|mm10> <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>"
     echo ""
     exit -1
 fi
@@ -33,7 +33,7 @@ ${BASEDIR}/align.sh ${ATYPE} ${FQ1} ${FQ2} ${HG} ${OUTP}
 ${BASEDIR}/pseudorep.sh ${OUTP}.final.bam ${OUTP}
 
 # Call peaks and filter using IDR (replace pseudo-replicates with true biological replicates if available)
-${BASEDIR}/peaks.sh ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam ${HG} ${OUTP}
+${BASEDIR}/peaks.sh ${ATYPE} ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep2.bam ${HG} ${OUTP}
 
 # Delete pseudo-replicates
 rm ${OUTP}.pseudorep1.bam ${OUTP}.pseudorep1.bam.bai ${OUTP}.pseudorep2.bam ${OUTP}.pseudorep2.bam.bai

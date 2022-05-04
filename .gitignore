@@ -1,9 +1,9 @@
 atac.slurm_submit.sh
-.channels
+.mamba
 .conda
 .envs
 .homer
-bin/
+conda/
 bed/
 example/
 motif/jaspar.gz

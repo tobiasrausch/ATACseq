@@ -3,7 +3,7 @@
 if [ $# -ne 5 ]
 then
     echo ""
-    echo "Usage: $0 <hg19|mm10> <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>"
+    echo "Usage: $0 <hg38|hg19|mm10> <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>"
     echo ""
     exit -1
 fi
@@ -12,8 +12,8 @@ SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
 # Activate environment
-export PATH=${BASEDIR}/../bin/bin:${PATH}
-source activate ${BASEDIR}/../bin/envs/atac
+export PATH=${BASEDIR}/../conda/bin:${PATH}
+source activate atac
 
 # Custom parameters
 THREADS=4
@@ -73,7 +73,7 @@ alfred qc -b ${BASEDIR}/../bed/${ATYPE}.promoter.bed.gz -r ${HG} -o ${OUTP}.bamS
 
 # Create browser tracks (ToDo)
 alfred tracks -o ${OUTP}.bedGraph.gz ${OUTP}.final.bam
-igvtools totdf ${OUTP}.bedGraph.gz ${OUTP}.tdf ${ATYPE}
+igvtools totdf ${OUTP}.bedGraph.gz ${OUTP}.tdf ${HG}
 
 # Deactivate environment
 source deactivate

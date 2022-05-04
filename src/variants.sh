@@ -12,8 +12,8 @@ SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
 # Activate environment
-export PATH=${BASEDIR}/../bin/bin:${PATH}
-source activate ${BASEDIR}/../bin/envs/atac
+export PATH=${BASEDIR}/../conda/bin:${PATH}
+source activate atac
 
 # CMD parameters
 GENOME=${1}

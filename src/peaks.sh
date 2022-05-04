@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]
+if [ $# -ne 5 ]
 then
     echo ""
-    echo "Usage: $0 <replicate1.bam> <replicate2.bam> <genome.fa> <output prefix>"
+    echo "Usage: $0 <hg38|hg19|mm10> <replicate1.bam> <replicate2.bam> <genome.fa> <output prefix>"
     echo ""
     exit -1
 fi
@@ -12,17 +12,18 @@ SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
 # Activate environment
-export PATH=${BASEDIR}/../bin/bin:${PATH}
-source activate ${BASEDIR}/../bin/envs/atac
+export PATH=${BASEDIR}/../conda/bin:${PATH}
+source activate atac
 
 # Custom parameters
 THREADS=4
 
 # CMD parameters
-REP1=${1}
-REP2=${2}
-HG=${3}
-OUTP=${4}
+ATYPE=${1}
+REP1=${2}
+REP2=${3}
+HG=${4}
+OUTP=${5}
 
 # Merge BAMs
 samtools merge -@ ${THREADS} ${OUTP}.merge.bam ${REP1} ${REP2}
@@ -33,7 +34,7 @@ ISIZE=`samtools view -f 2 -F 3852 ${OUTP}.merge.bam | awk '$9>length($10)' | cut
 
 # call peaks on replicates and merged BAM
 source deactivate
-source activate ${BASEDIR}/../bin/envs/atac2
+source activate atac2
 for PEAKBAM in ${OUTP}.merge.bam ${REP1} ${REP2}
 do
     PEAKN=${PEAKBAM}.suf
@@ -42,7 +43,7 @@ do
     rm ${PEAKN}_summits.bed ${PEAKN}_peaks.xls
 done
 source deactivate
-source activate ${BASEDIR}/../bin/envs/atac
+source activate atac
 
 # Saturated Peak Detection, significant peaks log2>=3 and -log10(p)>=3
 PKTOTAL=`cat ${OUTP}.merge.bam.suf_peaks.narrowPeak | cut -f 1-3 | sort | uniq | wc -l | cut -f 1`
@@ -79,7 +80,7 @@ echo -e "totpeaks\tfrip\tsigpeaks\trep1\trep2\trecallRep1\trecallRep2" > ${OUTP}
 echo -e "${PKTOTAL}\t${FRACPEAK1},${FRACPEAK2}\t${SIGTOTAL}\t${RECALLREP1}\t${RECALLREP2}\t${FRACREP1}\t${FRACREP2}" >> ${OUTP}.peaks.log
 
 # Create UCSC track
-echo "track type=narrowPeak visibility=3 db=hg19 name=\"${OUTP}\" description=\"${OUTP} narrowPeaks\"" | gzip -c > ${OUTP}.narrowPeak.ucsc.bed.gz
+echo "track type=narrowPeak visibility=3 db=${ATYPE} name=\"${OUTP}\" description=\"${OUTP} narrowPeaks\"" | gzip -c > ${OUTP}.narrowPeak.ucsc.bed.gz
 echo "browser position chr12:125400362-125403757" | gzip -c >> ${OUTP}.narrowPeak.ucsc.bed.gz
 cat ${OUTP}.peaks | gzip -c >> ${OUTP}.narrowPeak.ucsc.bed.gz
 

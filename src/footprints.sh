@@ -3,7 +3,7 @@
 if [ $# -ne 4 ]
 then
     echo ""
-    echo "Usage: $0 <hg19|mm10> <genome.fa> <input.bam> <output prefix>"
+    echo "Usage: $0 <hg38|hg19|mm10> <genome.fa> <input.bam> <output prefix>"
     echo ""
     exit -1
 fi
@@ -12,8 +12,8 @@ SCRIPT=$(readlink -f "$0")
 BASEDIR=$(dirname "$SCRIPT")
 
 # Activate environment
-export PATH=${BASEDIR}/../bin/bin:${PATH}
-source activate ${BASEDIR}/../bin/envs/atac
+export PATH=${BASEDIR}/../conda/bin:${PATH}
+source activate atac
 
 # Custom parameters
 THREADS=4
@@ -30,7 +30,7 @@ igvtools totdf ${OUTP}.footprint.bedGraph.gz ${OUTP}.footprint.tdf ${ATYPE}
 
 # call peaks on bedGraph
 source deactivate
-source activate ${BASEDIR}/../bin/envs/atac2
+source activate atac2
 
 # Find suitable cutoff for > 10,000 peaks
 macs2 bdgpeakcall --cutoff-analysis -g 75 -l 50 -i <(zcat ${OUTP}.footprint.bedGraph.gz) -o ${OUTP}.footprints_narrowPeak

@@ -15,8 +15,8 @@ BASEDIR=$(dirname "$SCRIPT")
 OUTP=${1}
 
 # Activate environment
-export PATH=${BASEDIR}/../bin/bin:${PATH}
-source activate ${BASEDIR}/../bin/envs/atac
+export PATH=${BASEDIR}/../conda/bin:${PATH}
+source activate atac
 
 # Collect QC information
 ${BASEDIR}/qc_globber.py -p ${OUTP} > ${OUTP}.key.metrics
