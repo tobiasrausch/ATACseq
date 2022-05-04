@@ -113,4 +113,4 @@ EMBO Mol Med (2020)
 
 License
 -------
-This ATAC-Seq pipeline is distributed under the GPLv3.
+This ATAC-Seq pipeline is distributed under the [BSD 3-Clause license](https://github.com/tobiasrausch/ATACseq/blob/main/LICENSE).
