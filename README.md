@@ -25,7 +25,7 @@ To annotate motifs and estimate TSS enrichments some simple scripts are included
 Running the ATAC-Seq analysis pipeline for a single sample
 ----------------------------------------------------------
 
-`./src/atac.sh <hg19|mm10> <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>`
+`./src/atac.sh <hg38|hg19|mm10> <read1.fq.gz> <read2.fq.gz> <genome.fa> <output prefix>`
 
 
 Plotting the key ATAC-Seq Quality Control metrics
